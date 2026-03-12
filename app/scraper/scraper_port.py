@@ -4,14 +4,14 @@ Each company adapter implements this port.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Union, AsyncGenerator
 
 
 class ScraperPort(ABC):
     """Port for fetching jobs from external career pages."""
 
     @abstractmethod
-    async def fetch_jobs(self) -> list[dict[str, Any]]:
+    async def fetch_jobs(self) -> Union[list[dict[str, Any]], AsyncGenerator[list[dict[str, Any]], None]]:
         """
         Scrape or fetch jobs from an external career page.
 

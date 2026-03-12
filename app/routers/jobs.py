@@ -5,16 +5,16 @@ All logic delegated to JobService and EnrichmentService.
 
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status  # type: ignore
 
-from app.dependencies import get_ai_service, get_db, get_embedding_service
-from app.domain.models import JobCreate, JobCreateResponse, JobDetail, JobFeedItem
-from app.ports.ai_port import AIPort
-from app.ports.database_port import DatabasePort
-from app.ports.embedding_port import EmbeddingPort
-from app.services.auth_service import get_current_user
-from app.services.enrichment_service import EnrichmentService
-from app.services.job_service import JobService
+from app.dependencies import get_ai_service, get_db, get_embedding_service  # type: ignore
+from app.domain.models import JobCreate, JobCreateResponse, JobDetail, JobFeedItem  # type: ignore
+from app.ports.ai_port import AIPort  # type: ignore
+from app.ports.database_port import DatabasePort  # type: ignore
+from app.ports.embedding_port import EmbeddingPort  # type: ignore
+from app.services.auth_service import get_current_user  # type: ignore
+from app.services.enrichment_service import EnrichmentService  # type: ignore
+from app.services.job_service import JobService  # type: ignore
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -65,7 +65,7 @@ async def list_provider_jobs(
 @router.get("/feed", response_model=list[JobFeedItem])
 async def get_job_feed(
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(500, ge=1, le=1000),
     db: DatabasePort = Depends(get_db),
 ):
     """Paginated feed of active job listings (public)."""

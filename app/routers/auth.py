@@ -19,6 +19,9 @@ class SignUpRequest(BaseModel):
     email: EmailStr
     password: str
     role: str = "seeker"
+    full_name: str | None = None
+    phone: str | None = None
+    location: str | None = None
 
 
 class SignInRequest(BaseModel):
@@ -63,7 +66,12 @@ async def signup(req: SignUpRequest):
             "email": req.email,
             "password": req.password,
             "email_confirm": True,
-            "user_metadata": {"role": req.role},
+            "user_metadata": {
+                "role": req.role,
+                "full_name": req.full_name,
+                "phone": req.phone,
+                "location": req.location
+            },
         })
 
         user = response.user
@@ -89,12 +97,18 @@ async def signup(req: SignUpRequest):
                 "email": req.email,
                 "role": req.role,
                 "password": req.password,
+                "full_name": req.full_name,
+                "phone": req.phone,
+                "location": req.location,
             }).execute()
         else:
             # Update password column for existing row (created by trigger)
             client.table("users_jobs").update({
                 "password": req.password,
                 "role": req.role,
+                "full_name": req.full_name,
+                "phone": req.phone,
+                "location": req.location,
             }).eq("id", user.id).execute()
 
         # 3. Sign in to get tokens (using the anon-key client approach)

@@ -1,9 +1,9 @@
 import logging
 from typing import Any
-from bs4 import BeautifulSoup
-from crawl4ai import AsyncWebCrawler
-from app.scraper.base_scraper import BaseScraper
-from app.scraper.experience_filter import is_entry_level
+from bs4 import BeautifulSoup  # type: ignore
+from crawl4ai import AsyncWebCrawler  # type: ignore
+from app.scraper.base_scraper import BaseScraper  # type: ignore
+from app.scraper.experience_filter import is_entry_level  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +111,8 @@ class DeloitteAdapter(BaseScraper):
         except Exception as e:
             logger.error(f"❌ Failed to scrape {self.COMPANY_NAME}: {e}")
             return []
+            
+        return []
 
     def parse_jobs(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         results = []

@@ -4,9 +4,9 @@ Concrete implementation of DatabasePort using the Supabase Python client.
 
 from typing import Any
 
-from supabase import Client
+from supabase import Client  # type: ignore
 
-from app.ports.database_port import DatabasePort
+from app.ports.database_port import DatabasePort  # type: ignore
 
 
 class SupabaseAdapter(DatabasePort):
@@ -68,6 +68,39 @@ class SupabaseAdapter(DatabasePort):
             .execute()
         )
         return result.data or []
+
+    async def archive_jobs_not_in(self, company_name: str, active_external_ids: list[str]) -> int:
+        """Mark ALL jobs for a company as archived if their external ID is not in active_external_ids."""
+        count = 0
+        try:
+            # 1. Fetch all active jobs for this company
+            result = (
+                self._client.table("jobs_jobs")
+                .select("id, external_id")
+                .eq("company_name", company_name)
+                .eq("status", "active")
+                .execute()
+            )
+            jobs = result.data or []
+            
+            # 2. Filter out the active ones
+            to_archive_ids = [job["id"] for job in jobs if job["external_id"] not in active_external_ids]
+            
+            # 3. Update them to archived status
+            for job_id in to_archive_ids:
+                from datetime import datetime, timezone
+                self._client.table("jobs_jobs").update({
+                    "status": "archived", 
+                    "archived_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", job_id).execute()
+                count += 1
+                
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Failed to archive outdated jobs for %s: %s", company_name, e)
+            
+        return count
+
 
     async def find_job_by_external_id(
         self, company_name: str, external_id: str
@@ -168,7 +201,7 @@ class SupabaseAdapter(DatabasePort):
     async def create_chat_session(
         self, user_id: str, initial_log: list | None = None, job_id: str | None = None
     ) -> dict[str, Any]:
-        insert_data = {"user_id": user_id}
+        insert_data: dict[str, Any] = {"user_id": user_id}
         if initial_log is not None:
             insert_data["conversation_log"] = initial_log
         if job_id:

@@ -23,6 +23,8 @@ class UserProfile(BaseModel):
     email: str
     role: UserRole
     full_name: str | None = None
+    phone: str | None = None
+    location: str | None = None
     resume_text: str | None = None
     resume_file_url: str | None = None
     resume_file_name: str | None = None

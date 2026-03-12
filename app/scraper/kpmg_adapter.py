@@ -1,9 +1,9 @@
 import logging
-import requests
+import requests  # type: ignore
 import time
 from typing import Any
-from app.scraper.scraper_port import ScraperPort
-from app.scraper.experience_filter import is_entry_level
+from app.scraper.scraper_port import ScraperPort  # type: ignore
+from app.scraper.experience_filter import is_entry_level  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -92,24 +92,30 @@ class KPMGAdapter(ScraperPort):
                             continue
 
                         # --- Fetch Full Description ---
-                        # Detail API: https://ejvp.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions/{job_id}
-                        detail_url = f"https://ejvp.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions/{job_id}"
+                        # Detail API: Oracle Cloud HCM uses recruitingCEJobRequisitionDetails with finder=ById
+                        detail_url = f"https://ejvp.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&finder=ById;Id={job_id},siteNumber=CX_1"
                         desc_raw = "Posted: Check official site." # Initialize desc_raw
                         # Retry logic
                         for attempt in range(3):
                             try:
                                 # Fetch detail
-                                # logger.info(f"    Fetching details for {title} (Attempt {attempt+1})")
                                 d_resp = requests.get(detail_url, headers=self.COMMON_HEADERS, timeout=30)
                                 if d_resp.status_code == 200:
                                     d_json = d_resp.json()
-                                    # Description is often in 'externalDescription' or 'description'
-                                    # Oracle Cloud HCM structure varies.
-                                    # We'll try common fields or dump everything
-                                    desc_raw = (d_json.get("externalDescription")
-                                                or d_json.get("description")
-                                                or d_json.get("longDescription")
-                                                or str(d_json)) # Fallback to raw JSON dump if structured field missing
+                                    items = d_json.get("items", [{}])
+                                    job_info = items[0] if items else {}
+                                    
+                                    desc = job_info.get("ExternalDescriptionStr") or ""
+                                    resp = job_info.get("ExternalResponsibilitiesStr") or ""
+                                    qual = job_info.get("ExternalQualificationsStr") or ""
+                                    
+                                    # Combine parts with clear headers for enrichment
+                                    desc_parts = []
+                                    if desc: desc_parts.append(f"<h3>About the Role</h3>{desc}")
+                                    if resp: desc_parts.append(f"<h3>Responsibilities</h3>{resp}")
+                                    if qual: desc_parts.append(f"<h3>Requirements</h3>{qual}")
+                                    
+                                    desc_raw = "<br><br>".join(desc_parts) if desc_parts else str(job_info)
 
                                     # Clean up if it's just raw JSON to save tokens?
                                     # No, let the enrichment filter handle length.

@@ -23,6 +23,11 @@ class JobPort(ABC):
         ...
 
     @abstractmethod
+    async def archive_jobs_not_in(self, company_name: str, active_external_ids: list[str]) -> int:
+        """Mark ALL jobs for a company as archived if their external ID is not in active_external_ids."""
+        ...
+
+    @abstractmethod
     async def find_job_by_external_id(self, company_name: str, external_id: str) -> dict[str, Any] | None:
         """Find a job by its external source identifier."""
         ...

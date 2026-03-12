@@ -8,20 +8,20 @@ Nothing else in the codebase changes  (Open/Closed Principle).
 
 from functools import lru_cache
 
-from fastapi import Depends
-from supabase import create_client
+from fastapi import Depends  # type: ignore
+from supabase import create_client  # type: ignore
 
-from app.adapters.document_adapter import DocumentAdapter
-from app.adapters.openai_adapter import OpenAIAdapter
-from app.adapters.openai_embedding import OpenAIEmbeddingAdapter
-from app.adapters.supabase_adapter import SupabaseAdapter
-from app.adapters.supabase_storage_adapter import SupabaseStorageAdapter
-from app.config import settings
-from app.ports.ai_port import AIPort
-from app.ports.database_port import DatabasePort
-from app.ports.document_port import DocumentPort
-from app.ports.embedding_port import EmbeddingPort
-from app.ports.storage_port import StoragePort
+from app.adapters.document_adapter import DocumentAdapter  # type: ignore
+from app.adapters.openai_adapter import OpenAIAdapter  # type: ignore
+from app.adapters.openai_embedding import OpenAIEmbeddingAdapter  # type: ignore
+from app.adapters.supabase_adapter import SupabaseAdapter  # type: ignore
+from app.adapters.supabase_storage_adapter import SupabaseStorageAdapter  # type: ignore
+from app.config import settings  # type: ignore
+from app.ports.ai_port import AIPort  # type: ignore
+from app.ports.database_port import DatabasePort  # type: ignore
+from app.ports.document_port import DocumentPort  # type: ignore
+from app.ports.embedding_port import EmbeddingPort  # type: ignore
+from app.ports.storage_port import StoragePort  # type: ignore
 
 
 # ── Singletons (cached) ──────────────────────────────────────
@@ -88,39 +88,47 @@ def get_document_parser() -> DocumentPort:
 
 # ── Scraper Registry ──────────────────────────────────────────
 
-from app.scraper.scraper_port import ScraperPort  # noqa: E402
-from app.scraper.deloitte_adapter import DeloitteAdapter  # noqa: E402
-from app.scraper.pwc_adapter import PwCAdapter  # noqa: E402
-from app.scraper.kpmg_adapter import KPMGAdapter  # noqa: E402
-from app.scraper.ey_adapter import EYAdapter  # noqa: E402
+from app.scraper.scraper_port import ScraperPort  # type: ignore # noqa: E402
 
-_SCRAPER_REGISTRY: dict[str, type[ScraperPort]] = {
-    "deloitte": DeloitteAdapter,
-    "pwc": PwCAdapter,
-    "kpmg": KPMGAdapter,
-    "ey": EYAdapter,
-}
-
+def _get_registry() -> dict[str, type]:
+    try:
+        from app.scraper.deloitte_adapter import DeloitteAdapter  # type: ignore
+        from app.scraper.pwc_adapter import PwCAdapter  # type: ignore
+        from app.scraper.kpmg_adapter import KPMGAdapter  # type: ignore
+        from app.scraper.ey_adapter import EYAdapter  # type: ignore
+        from app.scraper.generic_adapter import GenericAdapter  # type: ignore
+        return {
+            "deloitte": DeloitteAdapter,
+            "pwc": PwCAdapter,
+            "kpmg": KPMGAdapter,
+            "ey": EYAdapter,
+            "generic": GenericAdapter,
+        }
+    except ImportError as e:
+        import logging
+        logging.getLogger(__name__).warning("Scrapers could not be loaded due to import error: %s", e)
+        return {}
 
 def get_scraper(source_name: str) -> ScraperPort:
     """Resolve a source name to its scraper adapter instance."""
-    cls = _SCRAPER_REGISTRY.get(source_name.lower())
+    registry = _get_registry()
+    cls = registry.get(source_name.lower())
     if not cls:
         raise ValueError(
-            f"Unknown source: {source_name}. "
-            f"Available: {', '.join(_SCRAPER_REGISTRY.keys())}"
+            f"Unknown source or scrapers disabled: {source_name}. "
+            f"Available: {', '.join(registry.keys())}"
         )
     return cls()
 
-
 def get_all_scrapers() -> list[ScraperPort]:
     """Returns a list of all registered scraper instances."""
-    return [cls() for cls in _SCRAPER_REGISTRY.values()]
+    registry = _get_registry()
+    return [cls() for cls in registry.values()]
 
 
 # ── Domain Services ───────────────────────────────────────────
 
-from app.services.matching_service import MatchingService  # noqa: E402
+from app.services.matching_service import MatchingService  # type: ignore # noqa: E402
 
 
 def get_matching_service(
@@ -130,8 +138,20 @@ def get_matching_service(
     return MatchingService(db=db, ai=ai)
 
 
-from app.services.analytics_service import AnalyticsService
+from app.services.analytics_service import AnalyticsService  # type: ignore
 
 def get_analytics_service(db: DatabasePort = Depends(get_db)) -> AnalyticsService:
     """Injects DB adapter into analytics service."""
     return AnalyticsService(db=db)
+
+
+from app.services.user_service import UserService  # type: ignore
+
+def get_user_service(
+    db: DatabasePort = Depends(get_db),
+    doc: DocumentPort = Depends(get_document_parser),
+    emb: EmbeddingPort = Depends(get_embedding_service),
+    storage: StoragePort = Depends(get_storage),
+) -> UserService:
+    """Injects all ports into user domain service."""
+    return UserService(db=db, doc_parser=doc, embeddings=emb, storage=storage)

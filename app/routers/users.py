@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 
-from app.dependencies import get_db, get_document_parser, get_embedding_service, get_storage
+from app.dependencies import get_db, get_document_parser, get_embedding_service, get_storage, get_user_service
 from app.domain.models import ResumeDownloadResponse, ResumeUploadResponse, UserProfile
 from app.ports.database_port import DatabasePort
 from app.ports.document_port import DocumentPort
@@ -42,9 +42,13 @@ def _get_extension(filename: str | None) -> str:
 @router.get("/me", response_model=UserProfile)
 async def get_my_profile(
     current_user: dict[str, Any] = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
 ):
-    """Return the authenticated user's profile."""
-    return UserProfile(**current_user)
+    """Return the authenticated user's profile with full details from DB."""
+    profile = await user_service.get_profile(current_user["id"])
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return UserProfile(**profile)
 
 
 @router.post(
