@@ -20,3 +20,11 @@ class MockInterviewStatus(str, Enum):
     COMPLETED = "completed"
     PENDING_REVIEW = "pending_review"
     REVIEWED = "reviewed"
+
+
+class DocumentStatus(str, Enum):
+    UPLOADING = "uploading"
+    UPLOADED = "uploaded"
+    INDEXING = "indexing"
+    READY = "ready"
+    FAILED = "failed"

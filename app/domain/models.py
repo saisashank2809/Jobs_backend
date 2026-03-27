@@ -219,3 +219,25 @@ class MockInterviewStart(BaseModel):
 class MockInterviewSubmit(BaseModel):
     """Request to submit mock interview answers."""
     answers: list[str]
+
+
+# ── Documents ─────────────────────────────────────────────────
+
+
+class Document(BaseModel):
+    """Internal model for a document in the RAG pipeline."""
+    
+    doc_id: UUID
+    file_name: str
+    file_id: str | None = None
+    url: str | None = None
+    status: DocumentStatus
+    created_at: datetime | None = None
+    
+
+class DocumentUploadResponse(BaseModel):
+    """Response returned when a document is uploaded for processing."""
+    
+    doc_id: UUID
+    message: str = "Document uploaded successfully and is being processed."
+    status: DocumentStatus

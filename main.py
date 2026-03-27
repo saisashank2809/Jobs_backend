@@ -11,7 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import admin, auth, chat, ingestion, jobs, matching, users, blog, analytics
+from app.routers import admin, auth, chat, ingestion, jobs, matching, users, blog, analytics, rag
 
 # ── Logging ───────────────────────────────────────────────────
 logging.basicConfig(
@@ -79,6 +79,7 @@ app.include_router(admin.router)
 app.include_router(ingestion.router)
 app.include_router(blog.router)
 app.include_router(analytics.router)
+app.include_router(rag.router)
 
 
 

@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     telegram_bot_token: str | None = None
     telegram_channel_id: str | None = None
 
+    # ── Microsoft Graph ───────────────────────────────────────
+    msgraph_client_id: str = "placeholder_client_id"
+    msgraph_client_secret: str = "placeholder_secret"
+    msgraph_tenant_id: str = "placeholder_tenant"
+    msgraph_user_id: str = "placeholder_user"
+    onedrive_folder: str = "rag_docs"
+
+    # ── Database & Celery ─────────────────────────────────────
+    database_url: str = "postgresql://postgres:postgres@localhost:5432/jobs_db"
+    celery_broker_url: str = "redis://localhost:6379/0"
+
 
 # Singleton — import this wherever config is needed
 settings = Settings()  # type: ignore[call-arg]
