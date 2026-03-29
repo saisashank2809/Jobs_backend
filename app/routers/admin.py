@@ -6,17 +6,17 @@ import json
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks  # type: ignore
+from pydantic import BaseModel  # type: ignore
 
-from app.dependencies import get_ai_service, get_db, get_embedding_service
-from app.ports.ai_port import AIPort
-from app.ports.database_port import DatabasePort
-from app.ports.embedding_port import EmbeddingPort
-from app.services.auth_service import get_current_user
-from app.services.chat_service import ChatService
-from app.services.enrichment_service import EnrichmentService
-from app.scheduler import trigger_ingestion # Manual trigger import
+from app.dependencies import get_ai_service, get_db, get_embedding_service  # type: ignore
+from app.ports.ai_port import AIPort  # type: ignore
+from app.ports.database_port import DatabasePort  # type: ignore
+from app.ports.embedding_port import EmbeddingPort  # type: ignore
+from app.services.auth_service import get_current_user  # type: ignore
+from app.services.chat_service import ChatService  # type: ignore
+from app.services.enrichment_service import EnrichmentService  # type: ignore
+from app.scheduler import trigger_ingestion  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ async def intercept_session(
     # Inject a system notification into the conversation log
     import json
     from datetime import datetime, timezone
-    from app.services.chat_service import ChatService
+    from app.services.chat_service import ChatService  # type: ignore
 
     log = ChatService._parse_log(session.get("conversation_log"))
     notification = {
@@ -102,7 +102,7 @@ async def intercept_session(
     await db.update_chat_session(session_id, {"conversation_log": log})
 
     # Push live via WebSocket if user is connected
-    from app.routers.chat import manager
+    from app.routers.chat import manager  # type: ignore
     try:
         await manager.send_message(
             session_id,
@@ -139,8 +139,8 @@ async def send_admin_message(
 
     import json
     from datetime import datetime, timezone
-    from app.services.chat_service import ChatService
-    from app.routers.chat import manager
+    from app.services.chat_service import ChatService  # type: ignore
+    from app.routers.chat import manager  # type: ignore
 
     log = ChatService._parse_log(session.get("conversation_log"))
     msg = {
@@ -222,7 +222,7 @@ async def _reenrich_unenriched_jobs(db: DatabasePort, ai: AIPort, emb: Embedding
 
     # Process in small batches to avoid overloading the server
     for batch_start in range(0, len(unenriched), BATCH_SIZE):
-        batch = unenriched[batch_start:batch_start + BATCH_SIZE]
+        batch = list(unenriched[batch_start:batch_start + BATCH_SIZE])  # type: ignore[index]
         batch_num = (batch_start // BATCH_SIZE) + 1
         total_batches = (len(unenriched) + BATCH_SIZE - 1) // BATCH_SIZE
         logger.info("Processing batch %d/%d (%d jobs)", batch_num, total_batches, len(batch))
@@ -270,7 +270,7 @@ async def scrape_all_sources(
     """
     Trigger full scraping from all sources (no auth — dev only).
     """
-    from app.scheduler import trigger_ingestion
+    from app.scheduler import trigger_ingestion  # type: ignore
     background_tasks.add_task(trigger_ingestion, "all")
     return {"message": "Scraping ALL sources triggered in background. Check server logs for progress."}
 

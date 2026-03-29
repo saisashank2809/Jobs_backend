@@ -1,5 +1,11 @@
 {
   "extraPaths": [
-    "."
-  ]
+    ".",
+    "C:\\Users\\AKBARHUSSAIN\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages"
+  ],
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Windows",
+  "venvPath": "",
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false
 }

@@ -1,27 +1,24 @@
-"""Scrape + enrich all Big 4 jobs in one pipeline.
-
-Usage:
-    python scrape_and_enrich.py
-
-This script:
-1. Fetches jobs from all 4 scrapers (PwC, KPMG, Deloitte, EY)
-2. Inserts them into Supabase
-3. Runs AI enrichment (resume guide, prep questions, embedding) for each job
-"""
 import asyncio
 import logging
 import os
-from dotenv import load_dotenv
-from supabase import create_client
+import sys
+from typing import List, Dict, Any, cast, AsyncGenerator
 
-from app.scraper.deloitte_adapter import DeloitteAdapter
-from app.scraper.pwc_adapter import PwCAdapter
-from app.scraper.kpmg_adapter import KPMGAdapter
-from app.scraper.ey_adapter import EYAdapter
-from app.adapters.supabase_adapter import SupabaseAdapter
-from app.adapters.openai_adapter import OpenAIAdapter
-from app.adapters.openai_embedding import OpenAIEmbeddingAdapter
-from app.services.enrichment_service import EnrichmentService
+# 1. Add CWD to sys.path BEFORE other imports
+sys.path.insert(0, os.getcwd())
+
+# 2. Add type ignores for environment-dependent imports
+from dotenv import load_dotenv  # type: ignore
+from supabase import create_client  # type: ignore
+
+from app.scraper.deloitte_adapter import DeloitteAdapter  # type: ignore
+from app.scraper.pwc_adapter import PwCAdapter  # type: ignore
+from app.scraper.kpmg_adapter import KPMGAdapter  # type: ignore
+from app.scraper.ey_adapter import EYAdapter  # type: ignore
+from app.adapters.supabase_adapter import SupabaseAdapter  # type: ignore
+from app.adapters.openai_adapter import OpenAIAdapter  # type: ignore
+from app.adapters.openai_embedding import OpenAIEmbeddingAdapter  # type: ignore
+from app.services.enrichment_service import EnrichmentService  # type: ignore
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s │ %(levelname)-8s │ %(message)s")
@@ -32,14 +29,19 @@ INGESTION_PROVIDER_ID = "00000000-0000-4000-a000-000000000001"
 
 async def main():
     load_dotenv()
-    url = os.environ["SUPABASE_URL"]
-    key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-    openai_key = os.environ["OPENAI_API_KEY"]
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
 
-    sb = create_client(url, key)
+    if not all([url, key, openai_key]):
+        print("❌ Error: Missing environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or OPENAI_API_KEY).")
+        return
+
+    # url and key are checked above
+    sb = create_client(cast(str, url), cast(str, key))
     db = SupabaseAdapter(sb)
-    ai = OpenAIAdapter(api_key=openai_key)
-    emb = OpenAIEmbeddingAdapter(api_key=openai_key)
+    ai = OpenAIAdapter(api_key=cast(str, openai_key))
+    emb = OpenAIEmbeddingAdapter(api_key=cast(str, openai_key))
     enricher = EnrichmentService(db=db, ai=ai, embeddings=emb)
 
     scrapers = [
@@ -49,8 +51,8 @@ async def main():
         ("EY", EYAdapter()),
     ]
 
-    total_inserted = 0
-    total_enriched = 0
+    total_inserted: int = 0
+    total_enriched: int = 0
 
     for company_name, scraper in scrapers:
         print(f"\n{'='*60}")
@@ -58,13 +60,24 @@ async def main():
         print(f"{'='*60}")
 
         try:
-            jobs = await scraper.fetch_jobs()
+            # Handle both list and generator return types
+            jobs_result = await scraper.fetch_jobs()
+            jobs: List[Dict[str, Any]] = []
+            
+            if isinstance(jobs_result, list):
+                jobs = cast(List[Dict[str, Any]], jobs_result)
+            else:
+                async for batch in cast(AsyncGenerator[List[Dict[str, Any]], None], jobs_result):
+                    jobs.extend(batch)
+                
             print(f"✅ Fetched {len(jobs)} jobs")
         except Exception as e:
             print(f"❌ Scraper failed: {e}")
             continue
 
-        for job_data in jobs:
+        for job_data_raw in jobs:
+            # Cast to Dict to satisfy IDE assignment checks
+            job_data = cast(Dict[str, Any], job_data_raw)
             job_data.setdefault("company_name", company_name)
             job_data.setdefault("description_raw", "")
             job_data.setdefault("skills_required", [])
@@ -72,7 +85,7 @@ async def main():
             job_data["provider_id"] = INGESTION_PROVIDER_ID
 
             # Skip jobs with no real description (can't enrich them clearly)
-            desc = job_data.get("description_raw", "")
+            desc = str(job_data.get("description_raw", ""))
             
             # Check for bad descriptions
             is_placeholder = (
@@ -83,15 +96,15 @@ async def main():
             )
 
             if is_placeholder:
-                # Insert but mark as 'active' without enrichment data (so frontend shows "Not available" instead of bad AI)
+                # Insert but mark as 'active' without enrichment data
                 job_data["status"] = "active"
             
             try:
                 # Check if already exists
                 existing = sb.table("jobs_jobs") \
                     .select("id") \
-                    .eq("company_name", job_data["company_name"]) \
-                    .eq("external_id", job_data.get("external_id", "")) \
+                    .eq("company_name", str(job_data["company_name"])) \
+                    .eq("external_id", str(job_data.get("external_id", ""))) \
                     .maybe_single() \
                     .execute()
 
@@ -102,14 +115,14 @@ async def main():
 
                 result = sb.table("jobs_jobs").insert(job_data).execute()
                 created = result.data[0]
-                total_inserted += 1
+                total_inserted = total_inserted + 1  # type: ignore[operator]
 
                 # Run enrichment ONLY if we have a real description
                 if not is_placeholder:
                     try:
                         await enricher.enrich_job(created["id"])
                         await db.update_job(created["id"], {"status": "active"})
-                        total_enriched += 1
+                        total_enriched = total_enriched + 1  # type: ignore[operator]
                         print(f"  ✅ {job_data['title'][:50]} — enriched (Desc len: {len(desc)})")
                     except Exception as e:
                         await db.update_job(created["id"], {"status": "active"})
