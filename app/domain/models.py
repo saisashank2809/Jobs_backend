@@ -38,6 +38,14 @@ class ResumeUploadResponse(BaseModel):
     characters_extracted: int
 
 
+class ResumeReuploadResponse(BaseModel):
+    """Response after successfully replacing an existing resume."""
+
+    message: str = "Resume replaced successfully"
+    characters_extracted: int
+    replaced: bool = True
+
+
 class ResumeDownloadResponse(BaseModel):
     """Response for GET /users/me/resume."""
 

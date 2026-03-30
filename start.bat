@@ -1,0 +1,3 @@
+@echo off
+echo 🚀 Starting jobs.backend on port 8001...
+python -m uvicorn main:app --reload --port 8001

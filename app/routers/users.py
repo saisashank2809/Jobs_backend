@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status  # typ
 from fastapi.responses import JSONResponse  # type: ignore
 
 from app.dependencies import get_db, get_document_parser, get_embedding_service, get_storage, get_user_service  # type: ignore
-from app.domain.models import ResumeDownloadResponse, ResumeUploadResponse, UserProfile  # type: ignore
+from app.domain.models import ResumeDownloadResponse, ResumeUploadResponse, ResumeReuploadResponse, UserProfile  # type: ignore
 from app.ports.database_port import DatabasePort  # type: ignore
 from app.ports.document_port import DocumentPort  # type: ignore
 from app.ports.embedding_port import EmbeddingPort  # type: ignore
@@ -96,6 +96,58 @@ async def upload_resume(
         )
 
     return ResumeUploadResponse(characters_extracted=chars)
+
+
+@router.put(
+    "/resume",
+    response_model=ResumeReuploadResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Re-upload / replace an existing resume",
+)
+async def reupload_resume(
+    file: UploadFile,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+    doc_parser: DocumentPort = Depends(get_document_parser),
+    emb: EmbeddingPort = Depends(get_embedding_service),
+    storage: StoragePort = Depends(get_storage),
+):
+    """
+    Replace the authenticated user's existing resume with a new file.
+    Runs the same full pipeline: upload → parse → embed → save.
+    Returns `replaced: true` so callers know this was a replacement operation.
+    """
+
+    _get_extension(file.filename)  # validate extension
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty file uploaded",
+        )
+
+    svc = UserService(db=db, doc_parser=doc_parser, embeddings=emb, storage=storage)
+
+    try:
+        chars = await svc.process_resume(
+            user_id=current_user["id"],
+            file_bytes=file_bytes,
+            file_name=file.filename,
+            content_type=file.content_type or "application/octet-stream",
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Resume re-upload failed: {exc}",
+        )
+
+    return ResumeReuploadResponse(characters_extracted=chars, replaced=True)
 
 
 @router.get("/me/resume")

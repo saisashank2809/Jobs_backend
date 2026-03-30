@@ -11,7 +11,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import admin, auth, chat, ingestion, jobs, matching, users, blog, analytics, rag, resume_builder
+from app.routers import admin, auth, chat, ingestion, jobs, matching, users, blog, analytics, rag, resume_builder, mock_interviews
+from app.mock_interview.router import router as mock_interview_router  # noqa: E402
 
 # ── Logging ───────────────────────────────────────────────────
 logging.basicConfig(
@@ -81,6 +82,8 @@ app.include_router(blog.router)
 app.include_router(analytics.router)
 app.include_router(rag.router)
 app.include_router(resume_builder.router)
+app.include_router(mock_interviews.router)
+app.include_router(mock_interview_router)
 
 
 
