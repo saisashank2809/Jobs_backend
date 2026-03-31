@@ -11,14 +11,8 @@ sys.path.insert(0, os.getcwd())
 from dotenv import load_dotenv  # type: ignore
 from supabase import create_client  # type: ignore
 
-from app.scraper.deloitte_adapter import DeloitteAdapter  # type: ignore
-from app.scraper.pwc_adapter import PwCAdapter  # type: ignore
-from app.scraper.kpmg_adapter import KPMGAdapter  # type: ignore
-from app.scraper.ey_adapter import EYAdapter  # type: ignore
-from app.adapters.supabase_adapter import SupabaseAdapter  # type: ignore
-from app.adapters.openai_adapter import OpenAIAdapter  # type: ignore
-from app.adapters.openai_embedding import OpenAIEmbeddingAdapter  # type: ignore
-from app.services.enrichment_service import EnrichmentService  # type: ignore
+from app.dependencies import _get_supabase_client, get_all_scrapers, get_ai_service, get_embedding_service, get_db
+from app.services.enrichment_service import EnrichmentService
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s │ %(levelname)-8s │ %(message)s")
@@ -39,22 +33,18 @@ async def main():
 
     # url and key are checked above
     sb = create_client(cast(str, url), cast(str, key))
-    db = SupabaseAdapter(sb)
-    ai = OpenAIAdapter(api_key=cast(str, openai_key))
-    emb = OpenAIEmbeddingAdapter(api_key=cast(str, openai_key))
+    db = get_db()
+    ai = get_ai_service()
+    emb = get_embedding_service()
     enricher = EnrichmentService(db=db, ai=ai, embeddings=emb)
 
-    scrapers = [
-        ("PwC", PwCAdapter()),
-        ("KPMG", KPMGAdapter()),
-        ("Deloitte", DeloitteAdapter()),
-        ("EY", EYAdapter()),
-    ]
+    scrapers = get_all_scrapers()
 
     total_inserted: int = 0
     total_enriched: int = 0
 
-    for company_name, scraper in scrapers:
+    for scraper in scrapers:
+        company_name = scraper.COMPANY_NAME
         print(f"\n{'='*60}")
         print(f"  {company_name}")
         print(f"{'='*60}")

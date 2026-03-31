@@ -91,23 +91,32 @@ def get_document_parser() -> DocumentPort:
 from app.scraper.scraper_port import ScraperPort  # type: ignore # noqa: E402
 
 def _get_registry() -> dict[str, type]:
-    try:
-        from app.scraper.deloitte_adapter import DeloitteAdapter  # type: ignore
-        from app.scraper.pwc_adapter import PwCAdapter  # type: ignore
-        from app.scraper.kpmg_adapter import KPMGAdapter  # type: ignore
-        from app.scraper.ey_adapter import EYAdapter  # type: ignore
-        from app.scraper.generic_adapter import GenericAdapter  # type: ignore
-        return {
-            "deloitte": DeloitteAdapter,
-            "pwc": PwCAdapter,
-            "kpmg": KPMGAdapter,
-            "ey": EYAdapter,
-            "generic": GenericAdapter,
-        }
-    except ImportError as e:
-        import logging
-        logging.getLogger(__name__).warning("Scrapers could not be loaded due to import error: %s", e)
-        return {}
+    import logging
+    import importlib
+    logger = logging.getLogger(__name__)
+    registry = {}
+    
+    # Load each scraper independently so one failure doesn't break everything
+    scrapers_to_load = [
+        ("deloitte", "app.scraper.deloitte_adapter", "DeloitteAdapter"),
+        ("pwc", "app.scraper.pwc_adapter", "PwCAdapter"),
+        ("kpmg", "app.scraper.kpmg_adapter", "KPMGAdapter"),
+        ("ey", "app.scraper.ey_adapter", "EYAdapter"),
+        ("generic", "app.scraper.generic_adapter", "GenericAdapter"),
+    ]
+    
+    for key, module_path, class_name in scrapers_to_load:
+        try:
+            mod = importlib.import_module(module_path)
+            cls = getattr(mod, class_name)
+            registry[key] = cls
+        except (ImportError, AttributeError, ModuleNotFoundError) as e:
+            logger.warning("Scraper '%s' could not be loaded: %s", key, e)
+            
+    if not registry:
+        logger.error("CRITICAL: No scrapers could be loaded!")
+        
+    return registry
 
 def get_scraper(source_name: str) -> ScraperPort:
     """Resolve a source name to its scraper adapter instance."""
@@ -152,9 +161,10 @@ def get_user_service(
     doc: DocumentPort = Depends(get_document_parser),
     emb: EmbeddingPort = Depends(get_embedding_service),
     storage: StoragePort = Depends(get_storage),
+    ai: AIPort = Depends(get_ai_service),
 ) -> UserService:
     """Injects all ports into user domain service."""
-    return UserService(db=db, doc_parser=doc, embeddings=emb, storage=storage)
+    return UserService(db=db, doc_parser=doc, embeddings=emb, storage=storage, ai=ai)
 
 
 from app.services.job_service import JobService  # type: ignore

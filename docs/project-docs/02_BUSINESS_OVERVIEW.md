@@ -34,8 +34,8 @@ The platform currently focuses on entry-level and internship positions from Big 
 | Bridge the Skill Gap | **Upskill Bridge** maps missing skills to learning resources |
 | Optimized Applications | **Resume Tailoring** rewrites bullet points for specific roles |
 | Market Readiness | **Campus Watch** provides real-time hiring trends and news |
-| Prepare with confidence | Interview questions and **Salary Estimation** for the actual role |
-| Real-time coaching | AI Career Coach with human expert backup |
+| Prepare with confidence | Interview questions and **AI Mock Interview** for the actual role |
+| Real-time coaching | AI Voice Interviewer with structured scorecard feedback |
 
 ### For Employers / Partners
 | Value | How Ottobon Delivers |
@@ -78,6 +78,7 @@ The platform currently focuses on entry-level and internship positions from Big 
 | Upskill Mapping | No | No | **Yes (actionable learning paths)** |
 | Real-time coaching | No | No | Yes (AI + human hybrid) |
 | Salary Estimation | Basic | Partial | **Yes (AI-driven per-listing)** |
+| AI Mock Interview | No | No | **Yes (Voice-enabled, Real-time)** |
 
 ### What Makes Ottobon Different
 
@@ -128,3 +129,23 @@ The platform is built with scalability in mind:
 - **HNSW Vector Indexes** — enables sub-millisecond similarity queries even at millions of job listings.
 - **Modular Data Sources** — adding a new job board or news feed requires only a new adapter, not a system rewrite.
 - **Privacy & Security** — Row Level Security (RLS) ensures user resumes and chat logs are strictly isolated and protected.
+
+---
+
+## 9. Current Implementation Status (Milestones)
+
+As of March 2026, the following major technical integrations have been completed:
+
+### 1. Unified AI Mock Interview Engine
+- **Voice Pipeline**: Full integration of STT (Whisper), LLM (GPT-4o), and TTS (OpenAI) for life-like interview simulations via WebSockets.
+- **Structured Evaluations**: Post-interview analysis providing 4-pillar scorecards (Strengths, Areas for Improvement, Detailed Feedback, and Review Topics).
+- **Unified Backend**: All AI services are consolidated into the main FastAPI application, running on a unified port structure (8001) for simplified deployment.
+
+### 2. Resume-Aware Intelligence
+- **Profile Integration**: The platform automatically retrieves the seeker's uploaded resume from the database for mock interviews and tailoring without requiring re-uploads.
+- **Context Injection**: Job-specific details (company name, roles, responsibilities) are dynamically injected into the AI's persona during interaction.
+
+### 3. Developer Experience & Stability
+- **One-Click Startup**: Implementation of `start.bat` for unified service orchestration.
+- **Port Alignment**: Frontend and Backend synchronization to resolve cross-origin and connection issues.
+- **Database Hardening**: Enhanced Supabase adapters for secure management of interview transcripts and user history.

@@ -28,6 +28,8 @@ class UserProfile(BaseModel):
     resume_text: str | None = None
     resume_file_url: str | None = None
     resume_file_name: str | None = None
+    skills: list[str] | None = Field(default_factory=list)
+    interests: str | None = None
     created_at: datetime | None = None
 
 
@@ -119,6 +121,24 @@ class MissingSkillsExtraction(BaseModel):
         ...,
         description="List of specific technical skills present in the requirements but absent or weak in the resume."
     )
+
+
+class SkillsExtraction(BaseModel):
+    """Structured output for extracting skills from text."""
+
+    skills: list[str] = Field(
+        ...,
+        description="List of technical/soft skills extracted from the text."
+    )
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Request body for partial profile updates."""
+    full_name: str | None = None
+    phone: str | None = None
+    location: str | None = None
+    skills: list[str] | None = None
+    interests: str | None = None
 
 
 # ── AI Enrichment ─────────────────────────────────────────────

@@ -5,7 +5,7 @@ Concrete implementation of AIPort using OpenAI GPT-4o-mini + Instructor.
 import instructor  # type: ignore
 from openai import AsyncOpenAI  # type: ignore
 
-from app.domain.models import AIEnrichment, ChatMessage, MissingSkillsExtraction, MockScorecard  # type: ignore
+from app.domain.models import AIEnrichment, ChatMessage, MissingSkillsExtraction, SkillsExtraction, MockScorecard  # type: ignore
 from app.ports.ai_port import AIPort  # type: ignore
 
 
@@ -101,6 +101,35 @@ class OpenAIAdapter(AIPort):
             max_tokens=300,
         )
         return result.missing_skills
+
+    async def extract_skills(self, text: str) -> list[str]:
+        """Extract a list of technical/soft skills from the provided text."""
+        
+        result = await self._instructor_client.chat.completions.create(
+            model=self._model,
+            response_model=SkillsExtraction,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert technical recruiter. "
+                        "Identify and extract all relevant technical skills, programming languages, "
+                        "frameworks, tools, and key soft skills from the provided text. "
+                        "Return them as a flat list of strings. "
+                        "Be exhaustive but accurate."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"## Text for Analysis\n{text[:4000]}\n\n" # Truncate for efficiency
+                        "Extract the skills now."
+                    ),
+                },
+            ],
+            max_tokens=500,
+        )
+        return result.skills
 
     async def chat(
         self, history: list[ChatMessage], user_context: str = ""

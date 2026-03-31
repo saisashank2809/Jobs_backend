@@ -22,6 +22,13 @@ class AIPort(ABC):
         ...
 
     @abstractmethod
+    async def extract_skills(self, text: str) -> list[str]:
+        """
+        Extract a list of technical/soft skills from the provided text.
+        """
+        ...
+
+    @abstractmethod
     async def extract_missing_skills(self, resume_text: str, required_skills: list[str]) -> list[str]:
         """
         Identify missing skills from resume against requirements.

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status  # typ
 from fastapi.responses import JSONResponse  # type: ignore
 
 from app.dependencies import get_db, get_document_parser, get_embedding_service, get_storage, get_user_service  # type: ignore
-from app.domain.models import ResumeDownloadResponse, ResumeUploadResponse, ResumeReuploadResponse, UserProfile  # type: ignore
+from app.domain.models import ResumeDownloadResponse, ResumeUploadResponse, ResumeReuploadResponse, UserProfile, ProfileUpdateRequest  # type: ignore
 from app.ports.database_port import DatabasePort  # type: ignore
 from app.ports.document_port import DocumentPort  # type: ignore
 from app.ports.embedding_port import EmbeddingPort  # type: ignore
@@ -48,6 +48,31 @@ async def get_my_profile(
     profile = await user_service.get_profile(current_user["id"])
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
+    return UserProfile(**profile)
+
+
+@router.patch("/me", response_model=UserProfile)
+async def update_my_profile(
+    req: ProfileUpdateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    """
+    Partially update the authenticated user's profile.
+    Only fields provided in the request body will be changed.
+    """
+    # Filter out None values to perform partial update
+    update_data = {k: v for k, v in req.model_dump().items() if v is not None}
+    
+    if not update_data:
+        # No fields to update, just return current profile
+        profile = await user_service.get_profile(current_user["id"])
+        return UserProfile(**profile)
+
+    await user_service.update_profile(current_user["id"], update_data)
+    
+    # Return updated profile
+    profile = await user_service.get_profile(current_user["id"])
     return UserProfile(**profile)
 
 
@@ -179,3 +204,25 @@ async def download_resume(
         },
         headers={"Cache-Control": "no-store"},
     )
+
+
+@router.post("/extract-skills")
+async def extract_skills_endpoint(
+    file: UploadFile,
+    user_service: UserService = Depends(get_user_service),
+):
+    """
+    Extract skills from a resume file without requiring authentication.
+    Used during the signup questionnaire.
+    """
+    _get_extension(file.filename)
+    file_bytes = await file.read()
+    
+    try:
+        skills = await user_service.extract_skills_from_resume(file_bytes, file.filename)
+        return {"skills": skills}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Skill extraction failed: {e}",
+        )

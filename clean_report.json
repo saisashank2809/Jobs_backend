@@ -1,0 +1,180 @@
+{
+  "date": "2026-03-31",
+  "market_stats": {
+    "total_jobs": 83,
+    "top_skills": [
+      {
+        "name": "Data Analysis",
+        "count": 7
+      },
+      {
+        "name": "Communication Skills",
+        "count": 7
+      },
+      {
+        "name": "Sql",
+        "count": 7
+      },
+      {
+        "name": "Typescript",
+        "count": 5
+      },
+      {
+        "name": "Cross-Functional Collaboration",
+        "count": 4
+      },
+      {
+        "name": "Java",
+        "count": 4
+      },
+      {
+        "name": "Agile Methodologies",
+        "count": 4
+      },
+      {
+        "name": "Javascript",
+        "count": 4
+      },
+      {
+        "name": "Team Collaboration",
+        "count": 4
+      },
+      {
+        "name": "Problem Solving",
+        "count": 3
+      }
+    ],
+    "salary_trends": [
+      {
+        "role": "Sales",
+        "avg_min": 18,
+        "avg_max": 36,
+        "count": 8
+      },
+      {
+        "role": "Intern",
+        "avg_min": 7,
+        "avg_max": 12,
+        "count": 4
+      },
+      {
+        "role": "Data Engineer",
+        "avg_min": 7,
+        "avg_max": 12,
+        "count": 3
+      },
+      {
+        "role": "Full Stack Developer",
+        "avg_min": 10,
+        "avg_max": 15,
+        "count": 3
+      },
+      {
+        "role": "Associate Hospital Operations Health Industries Advisory",
+        "avg_min": 8,
+        "avg_max": 13,
+        "count": 2
+      },
+      {
+        "role": "Associate Java Developer Data & Analytics Advisory",
+        "avg_min": 6,
+        "avg_max": 11,
+        "count": 2
+      },
+      {
+        "role": "Ramp Agent (Station Attendant) \u2013 Airport - Part-Time",
+        "avg_min": 3,
+        "avg_max": 5,
+        "count": 2
+      },
+      {
+        "role": "Administrator - Network Lan/Wan",
+        "avg_min": 5,
+        "avg_max": 9,
+        "count": 2
+      }
+    ],
+    "top_companies": [
+      {
+        "name": "PwC",
+        "count": 7
+      },
+      {
+        "name": "Qualcomm",
+        "count": 5
+      },
+      {
+        "name": "Chevron",
+        "count": 5
+      },
+      {
+        "name": "Ovhcloud",
+        "count": 5
+      },
+      {
+        "name": "Ptc",
+        "count": 5
+      }
+    ],
+    "work_styles": [
+      {
+        "name": "On-site",
+        "value": 83
+      }
+    ],
+    "experience_levels": [
+      {
+        "subject": "Not Specified",
+        "A": 78,
+        "fullMark": 83
+      },
+      {
+        "subject": "Internship",
+        "A": 4,
+        "fullMark": 83
+      },
+      {
+        "subject": "Senior/Lead",
+        "A": 1,
+        "fullMark": 83
+      }
+    ]
+  },
+  "career_news": [
+    {
+      "title": "PwC planning to increase the number of graduates it takes on - bbc.com",
+      "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFAycTZmeFFreEVZbXJ4YXFSUVdaLVdOWW1TaVl6WHdGNloyQXo4UjBhXzJhRV8zam84Z28xSU90Q1dLN0FvLUotUmdYTlFRck9zaEJoWGNmYTVhUQ?oc=5",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiWkFVX3lxTFAycTZmeFFreEVZbXJ4YXFSUVdaLVdOWW1TaVl6WHdGNloyQXo4UjBhXzJhRV8zam84Z28xSU90Q1dLN0FvLUotUmdYTlFRck9zaEJoWGNmYTVhUQ?oc=5\" target=\"_blank\">PwC planning to increase the number of graduates it takes on</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">bbc.com</font>",
+      "published": "Fri, 13 Mar 2026 07:00:00 GMT",
+      "source": "bbc.com"
+    },
+    {
+      "title": "More CEOs envision hiring than firing due to AI, CEO survey finds - Axios",
+      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTFBmNHdqbjI1MzZnaVpPTWJ4NHloaWJfU1N0MlR5SkN2bFZRTmV6cFBxaTNnSDFQb1ZDRHdEZm9wd1BROTlqSmxndE5Wckt6WDk5M0VIaVNoM3p6VnhlTkFqcw?oc=5",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiYEFVX3lxTFBmNHdqbjI1MzZnaVpPTWJ4NHloaWJfU1N0MlR5SkN2bFZRTmV6cFBxaTNnSDFQb1ZDRHdEZm9wd1BROTlqSmxndE5Wckt6WDk5M0VIaVNoM3p6VnhlTkFqcw?oc=5\" target=\"_blank\">More CEOs envision hiring than firing due to AI, CEO survey finds</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">Axios</font>",
+      "published": "Tue, 10 Mar 2026 07:00:00 GMT",
+      "source": "Axios"
+    },
+    {
+      "title": "KPMG Intern Pulse Survey: Gen Z Sees AI Automating 20% of Their Future Full-Time Jobs but Are Confident in Ability to Adapt to AI Advancements in Their Field - KPMG",
+      "link": "https://news.google.com/rss/articles/CBMid0FVX3lxTE44V041RkcxZ3U2eVFIOUtsWmZvbWZwM1RFb2ROaG5Nb2t2RHlsaENkV3Z3Wk5nNUs5c1NmZnFtWnhRTlFiVzE2bE54Y0o3cDlJcFpQSHlEeE1fNlVVT0t6clNmOW5PS3VJa3dBMWs3bHpVVWJEMjJJ?oc=5",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMid0FVX3lxTE44V041RkcxZ3U2eVFIOUtsWmZvbWZwM1RFb2ROaG5Nb2t2RHlsaENkV3Z3Wk5nNUs5c1NmZnFtWnhRTlFiVzE2bE54Y0o3cDlJcFpQSHlEeE1fNlVVT0t6clNmOW5PS3VJa3dBMWs3bHpVVWJEMjJJ?oc=5\" target=\"_blank\">KPMG Intern Pulse Survey: Gen Z Sees AI Automating 20% of Their Future Full-Time Jobs but Are Confident in Ability to Adapt to AI Advancements in Their Field</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">KPMG</font>",
+      "published": "Tue, 19 Aug 2025 07:00:00 GMT",
+      "source": "KPMG"
+    },
+    {
+      "title": "After Receiving Internship Offers From The Big Four, Accounting Alumna Isabella Williams \u201925 Is Thriving at PwC - UConn Today",
+      "link": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxQQ0lkeVhBSk5DajFyTGpiengtVzJkZWJHLWlEY3pzbEc1SDVUck53c0syX3RqUTZvYkxyWWVZbFpjTWF4c2lsYjhfY0RvMEdPNEs0WnN5XzdjSXQ5WTR3RFZTUFNQVEJOV29JTWE3UDByRmFESEVUZjEzdThnVkZTbG5ESHJCaVd3Y1haYUZuYlFjRkF5UzVOSHhQc19tTDJtM3B0NThGVEg3Y3lGWUpRN1BpWUVEc2xxdWpSamFnMEZiZ1JVS1UzMFIwYWZuM2ZfYk5KYktSN2Ezdw?oc=5",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMi2gFBVV95cUxQQ0lkeVhBSk5DajFyTGpiengtVzJkZWJHLWlEY3pzbEc1SDVUck53c0syX3RqUTZvYkxyWWVZbFpjTWF4c2lsYjhfY0RvMEdPNEs0WnN5XzdjSXQ5WTR3RFZTUFNQVEJOV29JTWE3UDByRmFESEVUZjEzdThnVkZTbG5ESHJCaVd3Y1haYUZuYlFjRkF5UzVOSHhQc19tTDJtM3B0NThGVEg3Y3lGWUpRN1BpWUVEc2xxdWpSamFnMEZiZ1JVS1UzMFIwYWZuM2ZfYk5KYktSN2Ezdw?oc=5\" target=\"_blank\">After Receiving Internship Offers From The Big Four, Accounting Alumna Isabella Williams \u201925 Is Thriving at PwC</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">UConn Today</font>",
+      "published": "Tue, 21 Oct 2025 07:00:00 GMT",
+      "source": "UConn Today"
+    },
+    {
+      "title": "How AI is changing early careers: A view from entry-level workers - PwC",
+      "link": "https://news.google.com/rss/articles/CBMiekFVX3lxTE1odEtua0dKZnpOa3kzX2V1MzNEbnFtdzJOWWx3aU9VMDRBa2tWMy1GN1FvaWhvX3VTYk1jYlMzbDgyNF82Ykg0Vjdzcmt3NjhhdExCSnJKUUxrY2ZGTGJ6U1Z1Nm5XTjIwdF9WYURIR3kybTNpckR5alFB?oc=5",
+      "summary": "<a href=\"https://news.google.com/rss/articles/CBMiekFVX3lxTE1odEtua0dKZnpOa3kzX2V1MzNEbnFtdzJOWWx3aU9VMDRBa2tWMy1GN1FvaWhvX3VTYk1jYlMzbDgyNF82Ykg0Vjdzcmt3NjhhdExCSnJKUUxrY2ZGTGJ6U1Z1Nm5XTjIwdF9WYURIR3kybTNpckR5alFB?oc=5\" target=\"_blank\">How AI is changing early careers: A view from entry-level workers</a>&nbsp;&nbsp;<font color=\"#6f6f6f\">PwC</font>",
+      "published": "Fri, 20 Feb 2026 08:00:00 GMT",
+      "source": "PwC"
+    }
+  ]
+}

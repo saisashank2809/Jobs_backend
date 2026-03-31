@@ -12,6 +12,7 @@ from app.ports.database_port import DatabasePort
 from app.ports.document_port import DocumentPort
 from app.ports.embedding_port import EmbeddingPort
 from app.ports.storage_port import StoragePort
+from app.ports.ai_port import AIPort
 
 RESUME_BUCKET = "resumes"
 
@@ -25,15 +26,24 @@ class UserService:
         doc_parser: DocumentPort,
         embeddings: EmbeddingPort,
         storage: StoragePort,
+        ai: AIPort | None = None,
     ) -> None:
         self._db = db
         self._doc = doc_parser
         self._emb = embeddings
         self._storage = storage
+        self._ai = ai
 
     async def get_profile(self, user_id: str) -> dict[str, Any] | None:
         """Fetch user profile from the data store."""
         return await self._db.get_user(user_id)
+
+    async def update_profile(self, user_id: str, data: dict[str, Any]) -> None:
+        """
+        Update user profile fields.
+        Only fields provided in 'data' will be updated.
+        """
+        await self._db.upsert_user(user_id, data)
 
     async def process_resume(
         self,
@@ -111,3 +121,19 @@ class UserService:
             expires_in=900,  # 15-minute short-lived URL
         )
         return url
+
+    async def extract_skills_from_resume(self, file_bytes: bytes, file_name: str) -> list[str]:
+        """
+        Extract text from file, then call AI to extract skills.
+        Used for the signup questionnaire and profile page.
+        """
+        if self._ai is None:
+            raise ValueError("AI service not initialized in UserService")
+
+        ext = os.path.splitext(file_name)[1].lower().lstrip(".")
+        text = await self._doc.extract_text(file_bytes, ext)
+        
+        if not text.strip():
+            return []
+
+        return await self._ai.extract_skills(text)

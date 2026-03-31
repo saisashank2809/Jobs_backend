@@ -22,6 +22,8 @@ class SignUpRequest(BaseModel):
     full_name: str | None = None
     phone: str | None = None
     location: str | None = None
+    skills: list[str] = []
+    interests: str = ""
 
 
 class SignInRequest(BaseModel):
@@ -100,6 +102,8 @@ async def signup(req: SignUpRequest):
                 "full_name": req.full_name,
                 "phone": req.phone,
                 "location": req.location,
+                "skills": req.skills,
+                "interests": req.interests,
             }).execute()
         else:
             # Update password column for existing row (created by trigger)
@@ -109,6 +113,8 @@ async def signup(req: SignUpRequest):
                 "full_name": req.full_name,
                 "phone": req.phone,
                 "location": req.location,
+                "skills": req.skills,
+                "interests": req.interests,
             }).eq("id", user.id).execute()
 
         # 3. Sign in to get tokens (using the anon-key client approach)
