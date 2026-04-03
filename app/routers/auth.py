@@ -4,7 +4,7 @@ Routes through the backend to bypass Supabase's free-tier rate limits.
 """
 
 import logging
-from pydantic import BaseModel, EmailStr  # type: ignore
+from pydantic import BaseModel, EmailStr, Field  # type: ignore
 
 from fastapi import APIRouter, HTTPException, status  # type: ignore
 
@@ -24,6 +24,8 @@ class SignUpRequest(BaseModel):
     location: str | None = None
     skills: list[str] = []
     interests: str = ""
+    dob: str | None = None
+    aspirations: list[str] = Field(default_factory=list, max_length=5)
 
 
 class SignInRequest(BaseModel):
@@ -104,6 +106,8 @@ async def signup(req: SignUpRequest):
                 "location": req.location,
                 "skills": req.skills,
                 "interests": req.interests,
+                "dob": req.dob,
+                "aspirations": req.aspirations,
             }).execute()
         else:
             # Update password column for existing row (created by trigger)
@@ -115,6 +119,8 @@ async def signup(req: SignUpRequest):
                 "location": req.location,
                 "skills": req.skills,
                 "interests": req.interests,
+                "dob": req.dob,
+                "aspirations": req.aspirations,
             }).eq("id", user.id).execute()
 
         # 3. Sign in to get tokens (using the anon-key client approach)

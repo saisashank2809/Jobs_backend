@@ -30,6 +30,8 @@ class UserProfile(BaseModel):
     resume_file_name: str | None = None
     skills: list[str] | None = Field(default_factory=list)
     interests: str | None = None
+    dob: str | None = None
+    aspirations: list[str] | None = Field(default_factory=list)
     created_at: datetime | None = None
 
 
@@ -139,6 +141,8 @@ class ProfileUpdateRequest(BaseModel):
     location: str | None = None
     skills: list[str] | None = None
     interests: str | None = None
+    dob: str | None = None
+    aspirations: list[str] | None = Field(None, max_length=5)
 
 
 # ── AI Enrichment ─────────────────────────────────────────────
