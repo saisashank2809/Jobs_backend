@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import admin, auth, chat, ingestion, jobs, matching, users, blog, analytics, rag, resume_builder, mock_interviews
 from app.mock_interview.router import router as mock_interview_router  # noqa: E402
+from app.job_matching import router as job_match_router
 
 # ── Logging ───────────────────────────────────────────────────
 logging.basicConfig(
@@ -74,6 +75,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(jobs.router)
+app.include_router(job_match_router)
 app.include_router(matching.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
@@ -84,6 +86,7 @@ app.include_router(rag.router)
 app.include_router(resume_builder.router)
 app.include_router(mock_interviews.router)
 app.include_router(mock_interview_router)
+
 
 
 
