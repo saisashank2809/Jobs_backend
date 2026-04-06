@@ -157,7 +157,18 @@ class SupabaseAdapter(DatabasePort):
     async def update_chat_session(
         self, session_id: str, data: dict[str, Any]
     ) -> None:
-        self._client.table("chat_sessions_jobs").update(data).eq("id", session_id).execute()
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            result = self._client.table("chat_sessions_jobs").update(data).eq("id", session_id).execute()
+            # PostgREST returns the updated row if successful. 
+            # If empty, it might mean the ID didn't match or the method was quietly dropped.
+            if not result.data:
+                logger.warning("Supabase UPDATE for session %s returned NO data. This often happens if the ID is wrong OR the PATCH method is blocked by the host.", session_id)
+        except Exception as e:
+            logger.error("Supabase UPDATE failed for session %s: %s", session_id, e)
+            raise
 
 
 

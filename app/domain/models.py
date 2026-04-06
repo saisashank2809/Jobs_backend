@@ -106,10 +106,14 @@ class JobCreateResponse(BaseModel):
 
 
 class MatchResult(BaseModel):
-    """Response for POST /jobs/{id}/match."""
+    """Response for GET /jobs/{id}/match."""
 
     job_id: UUID
     similarity_score: float = Field(..., ge=0.0, le=1.0)
+    match_score: int
+    skills_score: int | None = None
+    interests_score: int | None = None
+    aspirations_score: int | None = None
     gap_detected: bool
     gap_analysis: str | None = None
     missing_skills: list[str] = Field(default_factory=list)

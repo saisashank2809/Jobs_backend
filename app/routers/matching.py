@@ -16,7 +16,7 @@ from app.services.matching_service import MatchingService
 router = APIRouter(prefix="/jobs", tags=["Matching"])
 
 
-@router.post("/{job_id}/match", response_model=MatchResult)
+@router.api_route("/{job_id}/match", methods=["GET", "POST"], response_model=MatchResult)
 async def match_user_to_job(
     job_id: str,
     current_user: dict[str, Any] = Depends(get_current_user),

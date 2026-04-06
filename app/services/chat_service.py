@@ -48,7 +48,7 @@ class ChatService:
         if status == "active_human":
             status = "active_ai"
             
-        return visible_log[-count:], status
+        return (visible_log[-count:] or []), status
 
     async def handle_message(
         self, session_id: str, user_message: str
@@ -60,6 +60,15 @@ class ChatService:
         session = await self._db.get_chat_session(session_id)
         if not session:
             raise ValueError(f"Chat session {session_id} not found")
+
+        # ── Extract text from JSON if submitted as an object ──
+        if user_message.strip().startswith("{"):
+            try:
+                import json
+                parsed = json.loads(user_message)
+                user_message = parsed.get("message") or parsed.get("text") or parsed.get("content") or user_message
+            except:
+                pass
 
         # Append user message to log
         log = self._parse_log(session.get("conversation_log"))
@@ -101,7 +110,7 @@ class ChatService:
         await self._db.update_chat_session(
             session_id, {"conversation_log": log}
         )
-        return ai_reply
+        return ai_reply or "I'm having a small glitch—please try again!"
 
     @staticmethod
     def _parse_log(raw: Any) -> list[dict[str, Any]]:
@@ -145,6 +154,20 @@ class ChatService:
                     skills = user["skills"] if isinstance(user["skills"], list) else []
                     if skills:
                         parts.append(f"Candidate skills: {', '.join(skills)}")
+
+            # ── Add Job Context from Conversation Log ──
+            if conversation_log:
+                for entry in conversation_log:
+                    if entry.get("hidden") and entry.get("job_title"):
+                        parts.append(f"Target Job: {entry['job_title']}")
+                        if entry.get("job_description"):
+                            # Already truncated in router, but just in case
+                            parts.append(f"Job Description: {entry['job_description'][:1000]}")
+                        if entry.get("skills_required"):
+                            skills = entry["skills_required"]
+                            if isinstance(skills, list):
+                                parts.append(f"Required Skills: {', '.join(skills)}")
+                        break
         except Exception as e:
             logger.warning("Failed to fetch user context for %s: %s", user_id, e)
 
