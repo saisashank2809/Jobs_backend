@@ -32,6 +32,7 @@ class UserProfile(BaseModel):
     interests: str | None = None
     dob: str | None = None
     aspirations: list[str] | None = Field(default_factory=list)
+    avatar_url: str | None = None
     created_at: datetime | None = None
 
 
@@ -147,6 +148,7 @@ class ProfileUpdateRequest(BaseModel):
     interests: str | None = None
     dob: str | None = None
     aspirations: list[str] | None = Field(None, max_length=5)
+    avatar_url: str | None = None
 
 
 # ── AI Enrichment ─────────────────────────────────────────────
