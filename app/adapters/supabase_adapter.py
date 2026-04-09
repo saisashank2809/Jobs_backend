@@ -142,6 +142,9 @@ class SupabaseAdapter(DatabasePort):
         )
         return result.data or []
 
+    async def delete_job(self, job_id: str) -> None:
+        self._client.table("jobs_jobs").delete().eq("id", job_id).execute()
+
     # ── Chat Sessions ─────────────────────────────────────────
 
     async def get_chat_session(self, session_id: str) -> dict[str, Any] | None:
@@ -176,7 +179,7 @@ class SupabaseAdapter(DatabasePort):
         """Fetch all chat sessions for admin dashboard (bypasses RLS via service role)."""
         result = (
             self._client.table("chat_sessions_jobs")
-            .select("id, created_at, status, user_id, users_jobs(id, email, full_name)")
+            .select("id, created_at, status, user_id, user:users_jobs(id, email, full_name)")
             .order("created_at", desc=True)
             .execute()
         )

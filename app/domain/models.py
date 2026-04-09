@@ -221,6 +221,7 @@ class ChatSessionInfo(BaseModel):
     status: ChatStatus
     job_id: UUID | None = None
     job_title: str | None = None
+    is_intercepted: bool = False
     created_at: datetime | None = None
 
 

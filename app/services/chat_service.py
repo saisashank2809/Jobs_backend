@@ -61,6 +61,20 @@ class ChatService:
         if not session:
             raise ValueError(f"Chat session {session_id} not found")
 
+        # If an expert has intercepted, AI steps back
+        if session.get("is_intercepted"):
+            logger.info("Session %s is intercepted; skipping AI auto-reply.", session_id)
+            
+            # Still save the user message to the log for the expert to see
+            log = self._parse_log(session.get("conversation_log"))
+            log.append({
+                "role": "user",
+                "content": user_message,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            await self._db.update_chat_session(session_id, {"conversation_log": log})
+            return None
+
         # ── Extract text from JSON if submitted as an object ──
         if user_message.strip().startswith("{"):
             try:

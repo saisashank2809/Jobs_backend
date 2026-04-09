@@ -1,0 +1,88 @@
+{
+  "greenhouse": [
+    {
+      "company_name": "Greenhouse",
+      "token": "greenhouse"
+    },
+    {
+      "company_name": "OpenAI",
+      "token": "openai"
+    },
+    {
+      "company_name": "Grammarly",
+      "token": "grammarly"
+    }
+  ],
+  "lever": [
+    {
+      "company_name": "Lever",
+      "company_id": "lever"
+    },
+    {
+      "company_name": "Netflix",
+      "company_id": "netflix"
+    },
+    {
+      "company_name": "Palantir",
+      "company_id": "palantir"
+    }
+  ],
+  "smartrecruiters": [
+    {
+      "company_name": "Square",
+      "id": "Square"
+    },
+    {
+      "company_name": "Visa",
+      "id": "Visa"
+    },
+    {
+      "company_name": "Ubisoft",
+      "id": "Ubisoft"
+    }
+  ],
+  "ashby": [
+    {
+      "company_name": "Ashby",
+      "slug": "Ashby"
+    },
+    {
+      "company_name": "Sentry",
+      "slug": "sentry"
+    },
+    {
+      "company_name": "Vercel",
+      "slug": "vercel"
+    }
+  ],
+  "breezy": [
+    {
+      "company_name": "Breezy",
+      "slug": "breezy"
+    }
+  ],
+  "workable": [
+    {
+      "company_name": "Workable",
+      "subdomain": "workable"
+    },
+    {
+      "company_name": "Wise",
+      "subdomain": "transferwise"
+    }
+  ],
+  "workday": [
+    {
+      "company_name": "PwC",
+      "tenant": "pwc",
+      "site": "Global_Experienced_Careers",
+      "wd_number": "wd3"
+    },
+    {
+      "company_name": "Nvidia",
+      "tenant": "nvidia",
+      "site": "NVIDIA_External_Career_Site",
+      "wd_number": "wd5"
+    }
+  ]
+}

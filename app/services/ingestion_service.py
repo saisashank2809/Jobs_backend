@@ -132,36 +132,32 @@ class IngestionService:
                         stats["skipped"] += 1
                         continue
 
-                    # Filter Location to India
-                    # We accept common India locations or locations mentioning 'India'.
-                    # We reject locations explicitly outside of India if known (like US states, 'United States', UK, etc.)
-                    loc = job_data.get("location", "") or "India"
+                    # --- Location & Remote Logic ---
+                    loc = (job_data.get("location", "") or "India").lower()
+                    title_lower = title.lower()
+                    desc_lower = desc_raw.lower()
                     
-                    # Normalizing to lower case for check
-                    loc_lower = loc.lower()
+                    # 1. Higher-fidelity Remote detection (Title, Location, or Body)
+                    is_remote = any("remote" in text for text in [loc, title_lower, desc_lower])
                     
-                    # If location explicitly states another country or a famous non-India city/state (very basic heuristics)
-                    # For safety, if it contains 'india', 'bengaluru', 'bangalore', 'mumbai', 'delhi', 'pune', 'hyderabad', 'chennai', 'noida', 'gurugram', 'gurgaon', 'kerala', 'karnataka', 'maharashtra', 'remote' we allow.
-                    # Or we explicitly reject words like 'usa', 'united states', 'uk', 'united kingdom', 'london', 'new york', 'california', 'canada', 'australia' etc.
+                    # 2. India-only location check (only applies if NOT remote)
                     india_keywords = ["india", "bengaluru", "bangalore", "mumbai", "delhi", "pune", "hyderabad", "chennai", "noida", "gurugram", "gurgaon", "kerala", "karnataka", "maharashtra", "gujarat", "ahmedabad", "kolkata"]
                     foreign_keywords = ["usa", "united states", "uk", "united kingdom", "london", "new york", "california", "canada", "australia", "germany", "france", "singapore", "dubai", "uae", "mexico", "brazil", "japan", "china", "ireland", "washington", "texas", "florida"]
                     
-                    is_india = False
-                    if any(kw in loc_lower for kw in india_keywords) or "remote" in loc_lower or loc_lower == "":
-                        is_india = True
-                    elif any(kw in loc_lower for kw in foreign_keywords):
-                        is_india = False
-                    else:
-                        # If neither, we assume India to be safe in Indian-focused site scrapes unless proven otherwise, 
-                        # but in stricter mode maybe skip. For now, assume True unless a foreign keyword hits.
-                        is_india = True
-                        
-                    # Some sites use 2-letter states like 'CA, US', check for ', US' or ', CA'
-                    if re.search(r",\s*(us|uk|ca|au)$", loc_lower):
-                        is_india = False
-                        
-                    if not is_india:
-                        logger.info("Skipping job outside India: %s in %s", company, loc)
+                    is_india_eligible = False
+                    if any(kw in loc for kw in india_keywords) or loc == "" or loc == "india":
+                        is_india_eligible = True
+                    elif not any(kw in loc for kw in foreign_keywords):
+                        # If no foreign keywords, and no specific India keywords, we assume India for non-US/UK sites
+                        is_india_eligible = True
+                    
+                    # Country code check (e.g. , US)
+                    if re.search(r",\s*(us|uk|ca|au)$", loc):
+                        is_india_eligible = False
+
+                    # Final Logic: Allow if it's explicitly Remote OR if it's in India
+                    if not (is_remote or is_india_eligible):
+                        logger.info("Skipping non-remote foreign job: %s in %s", company, loc)
                         stats["skipped"] += 1
                         continue
 

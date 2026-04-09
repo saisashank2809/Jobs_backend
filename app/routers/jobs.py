@@ -90,3 +90,22 @@ async def get_job_details(
         )
 
     return JobDetail(**job)
+
+
+@router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_job(
+    job_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """Permanently delete a job listing (Provider only, ownership verified)."""
+    job_svc = JobService(db=db)
+    success = await job_svc.delete_job(job_id, current_user["id"])
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="NOT_AUTHORIZED_OR_NOT_FOUND",
+        )
+    
+    return None

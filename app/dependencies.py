@@ -103,6 +103,13 @@ def _get_registry() -> dict[str, type]:
         ("kpmg", "app.scraper.kpmg_adapter", "KPMGAdapter"),
         ("ey", "app.scraper.ey_adapter", "EYAdapter"),
         ("generic", "app.scraper.generic_adapter", "GenericAdapter"),
+        ("greenhouse", "app.scraper.greenhouse_adapter", "GreenhouseAdapter"),
+        ("lever", "app.scraper.lever_adapter", "LeverAdapter"),
+        ("smartrecruiters", "app.scraper.smartrecruiters_adapter", "SmartRecruitersAdapter"),
+        ("ashby", "app.scraper.ashby_adapter", "AshbyAdapter"),
+        ("breezy", "app.scraper.breezy_adapter", "BreezyAdapter"),
+        ("workable", "app.scraper.workable_adapter", "WorkableAdapter"),
+        ("workday", "app.scraper.workday_adapter", "WorkdayAdapter"),
     ]
     
     for key, module_path, class_name in scrapers_to_load:

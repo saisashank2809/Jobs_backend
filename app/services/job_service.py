@@ -37,3 +37,12 @@ class JobService:
     async def get_details(self, job_id: str) -> dict[str, Any] | None:
         """Get full 4-Pillar job details."""
         return await self._db.get_job(job_id)
+
+    async def delete_job(self, job_id: str, provider_id: str) -> bool:
+        """Permanently delete a job, verifying ownership first."""
+        job = await self._db.get_job(job_id)
+        if not job or job.get("provider_id") != provider_id:
+            return False
+        
+        await self._db.delete_job(job_id)
+        return True

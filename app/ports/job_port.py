@@ -46,3 +46,8 @@ class JobPort(ABC):
     async def get_all_jobs_for_analytics(self) -> list[dict[str, Any]]:
         """Fetch all active jobs with fields relevant for analytics (title, salary, skills)."""
         ...
+
+    @abstractmethod
+    async def delete_job(self, job_id: str) -> None:
+        """Permanently remove a job record."""
+        ...

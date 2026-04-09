@@ -99,7 +99,7 @@ async def intercept_session(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     log.append(notification)
-    await db.update_chat_session(session_id, {"conversation_log": log})
+    await db.update_chat_session(session_id, {"conversation_log": log, "is_intercepted": True})
 
     # Push live via WebSocket if user is connected
     from app.routers.chat import manager
@@ -161,6 +161,57 @@ async def send_admin_message(
         pass
 
     return {"ok": True}
+
+
+@router.post("/sessions/{session_id}/release", status_code=status.HTTP_200_OK)
+async def release_session(
+    session_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """
+    Admin releases a chat session back to the AI coach.
+    Sets is_intercepted = False and injects a resumption notification.
+    """
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can release sessions",
+        )
+
+    session = await db.get_chat_session(session_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    # 1. Update session state
+    import json
+    from datetime import datetime, timezone
+    from app.services.chat_service import ChatService
+
+    log = ChatService._parse_log(session.get("conversation_log"))
+    notification = {
+        "role": "system",
+        "content": "Expert has left. AI assistant resuming.",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    log.append(notification)
+    
+    await db.update_chat_session(
+        session_id, 
+        {"conversation_log": log, "is_intercepted": False}
+    )
+
+    # 2. Push live via WebSocket
+    from app.routers.chat import manager
+    try:
+        await manager.send_message(
+            session_id,
+            json.dumps({"type": "system_notification", "content": notification["content"]}),
+        )
+    except Exception:
+        pass
+
+    return {"ok": True, "message": "Session released to AI coach"}
 
 
 
