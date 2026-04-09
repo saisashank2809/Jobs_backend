@@ -11,26 +11,27 @@ from app.config import settings  # type: ignore
 
 async def evaluate_transcript(transcript: str, role_name: str = "Software Engineer") -> dict:
     """
-    Evaluate the completed interview transcript and return a structured JSON report.
+    Evaluate the completed interview transcript and return a comprehensive Markdown report.
     """
     client = AsyncOpenAI(api_key=settings.openai_api_key)
 
     system_prompt = f"""
-**Role:** You are an Objective Interview Assessor.
-**Objective:** Analyze the provided transcript of a technical interview for a {role_name} position and generate a structured evaluation.
-**Evaluation Criteria:**
-1. **Technical Accuracy:** Did the candidate's answers align with industry best practices and factual correctness?
-2. **Communication:** Were the answers clear, concise, and logically structured?
-3. **Problem Solving:** How well did the candidate handle follow-up questions or complex scenarios?
+**Role:** You are the Lead Career Analyst & Match Strategist.
+**Objective:** Analyze the provided mock interview transcript for a {role_name} position.
+**Output Format:** You must generate a comprehensive "Job Match Analysis" report STRICTLY in Markdown format.
 
-**Instructions:** Output your evaluation STRICTLY in the following JSON format. No markdown or conversational text outside the JSON block.
-{{
-  "overall_score": [Number between 1-100],
-  "strengths": ["[List 2-3 specific strengths demonstrated]"],
-  "areas_for_improvement": ["[List 2-3 specific areas lacking depth or clarity]"],
-  "detailed_feedback": "[A comprehensive paragraph summarizing performance]",
-  "recommended_topics_to_review": ["[List 1-3 concepts or technologies to study]"]
-}}
+**Required Sections:**
+1. **Executive Summary:** A brief "Hire/No Hire" verdict with a 1-sentence justification.
+2. **The Match Matrix (Table):**
+   | Criteria | Candidate Performance | Company Alignment | Reason for Match/Mismatch |
+   | :--- | :--- | :--- | :--- |
+   | Technical Depth | [Score 1-10] | [Role Req] | [Detailed explanation] |
+   | Culture Fit | [Observations] | [Company Values] | [Detailed explanation] |
+   | Communication | [Observations] | [Standard] | [Detailed explanation] |
+3. **Inside Insights :** Identify which of the candidate's answers would have passed or failed based on real-world Glassdoor review trends for top-tier firms. (e.g., "Reviewers mention this company hates 'I' statements; you used 'We' effectively").
+4. **Strategic Improvement Plan:** Three actionable steps to increase the "Match" probability.
+
+**Instructions:** Return the result as a JSON object with a single key "report_markdown" containing the full markdown text.
 """
 
     response = await client.chat.completions.create(
@@ -39,15 +40,16 @@ async def evaluate_transcript(transcript: str, role_name: str = "Software Engine
             {"role": "system", "content": system_prompt},
             {
                 "role": "user",
-                "content": f"**Interview Transcript:**\n{transcript}\n\nPlease generate the JSON evaluation.",
+                "content": f"**Interview Transcript:**\n{transcript}\n\nPlease generate the 'Job Match Analysis' Markdown report.",
             },
         ],
         response_format={"type": "json_object"},
-        temperature=0.3,
+        temperature=0.4,
     )
 
     result_text = response.choices[0].message.content or "{}"
     try:
         return json.loads(result_text)
     except Exception:
-        return {"error": "Failed to parse evaluation JSON."}
+        return {"error": "Failed to parse evaluation JSON.", "report_markdown": "Error generating report."}
+

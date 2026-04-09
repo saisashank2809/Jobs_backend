@@ -19,6 +19,8 @@ from app.mock_interview.services.session import (
     get_job_context,
     get_interview_mode,
     set_interview_mode,
+    increment_question_count,
+    get_question_count,
 )
 
 
@@ -39,10 +41,24 @@ async def orchestrate(websocket: WebSocket, audio_data: bytes, session_id: str) 
         await websocket.send_text(json.dumps({"type": "transcript", "text": text}))
         await append_to_session(session_id, "user", text)
 
-        # 3. Build context (mode, resume, job context, behavioral questions)
-        current_mode = await get_interview_mode(session_id)
+        # Handle explicit /analyze command
+        if "/analyze" in text.lower():
+            analysis_msg = "Understood. The interview has concluded. I am now synthesizing your 'Job Match Analysis' report. Please wait a moment."
+            await websocket.send_text(json.dumps({"type": "response_start"}))
+            await websocket.send_text(json.dumps({"type": "response_chunk", "text": analysis_msg}))
+            async for audio_chunk in text_to_speech_stream(analysis_msg):
+                await websocket.send_bytes(audio_chunk)
+            await websocket.send_text(json.dumps({"type": "response_done", "text": analysis_msg}))
+            await append_to_session(session_id, "assistant", analysis_msg)
+            # Signal the frontend to stop and evaluate
+            await websocket.send_text(json.dumps({"type": "session_end_trigger"}))
+            return
 
-        # Auto-detect mode from candidate's first message if not set
+        # 3. Build context
+        current_mode = await get_interview_mode(session_id)
+        q_count = await get_question_count(session_id)
+        
+        # Auto-detect mode...
         if not current_mode:
             lower = text.lower()
             if any(w in lower for w in ["hr", "human resources", "behavioral", "behaviour"]):
@@ -57,6 +73,11 @@ async def orchestrate(websocket: WebSocket, audio_data: bytes, session_id: str) 
         job_desc = job_context.get("job_description", "")
 
         context_parts: list[str] = []
+        if q_count >= 7:
+             context_parts.append("[SYSTEM_NOTE]: This is the final question. After this answer, conclude the interview and suggest the candidate types /analyze for the final report.")
+        elif q_count >= 5:
+             context_parts.append(f"[SYSTEM_NOTE]: You have asked {q_count} questions. You should aim to conclude the interview soon (within 7 questions total).")
+
         if current_mode == "hr":
             bq = await get_behavioral_questions()
             if bq:
@@ -76,7 +97,7 @@ async def orchestrate(websocket: WebSocket, audio_data: bytes, session_id: str) 
 
         history = await get_session_history(session_id)
 
-        # 4. Generate LLM response and stream TTS sentence-by-sentence
+        # 4. Generate LLM response
         full_response = ""
         sentence_buffer = ""
 
@@ -103,6 +124,7 @@ async def orchestrate(websocket: WebSocket, audio_data: bytes, session_id: str) 
         # 5. Finalise
         await websocket.send_text(json.dumps({"type": "response_done", "text": full_response}))
         await append_to_session(session_id, "assistant", full_response)
+        await increment_question_count(session_id)
 
     except Exception as exc:
         error_msg = f"Pipeline Error: {exc}"

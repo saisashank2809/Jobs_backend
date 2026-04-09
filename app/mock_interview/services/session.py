@@ -20,7 +20,20 @@ async def manage_session(session_id: str) -> None:
             "company_name": "",
             "job_description": "",
             "interview_mode": "",  # 'technical' | 'hr' | ''
+            "question_count": 0,
         }
+
+
+async def increment_question_count(session_id: str) -> None:
+    if session_id not in active_sessions:
+        await manage_session(session_id)
+    active_sessions[session_id]["question_count"] += 1
+
+
+async def get_question_count(session_id: str) -> int:
+    session = active_sessions.get(session_id)
+    return session.get("question_count", 0) if session else 0
+
 
 
 async def set_resume_text(session_id: str, text: str) -> None:
