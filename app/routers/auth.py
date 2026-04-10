@@ -27,6 +27,7 @@ class SignUpRequest(BaseModel):
     dob: str | None = None
     aspirations: list[str] = Field(default_factory=list, max_length=5)
     avatar_url: str | None = None
+    work_preference: str = "Hybrid / Both"
 
 
 class SignInRequest(BaseModel):
@@ -111,6 +112,7 @@ async def signup(req: SignUpRequest):
                 "dob": req.dob,
                 "aspirations": req.aspirations,
                 "avatar_url": req.avatar_url,
+                "work_preference": req.work_preference,
             }).execute()
         else:
             # Update password column for existing row (created by trigger)
@@ -125,6 +127,7 @@ async def signup(req: SignUpRequest):
                 "dob": req.dob,
                 "aspirations": req.aspirations,
                 "avatar_url": req.avatar_url,
+                "work_preference": req.work_preference,
             }).eq("id", user.id).execute()
 
         # 3. Sign in to get tokens (using the anon-key client approach)

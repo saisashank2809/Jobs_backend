@@ -86,6 +86,33 @@ class JobMatchingService:
             if kw in exp_lower:
                 return 0.1
         return 0.0
+    
+    def calculate_work_preference_score(self, user_preference: str | None, job_title: str, job_description: str, job_location: str | None) -> float:
+        """
+        Calculates match score for work preference:
+        - If user prefers Remote: Score 1.0 if 'remote' in title, desc, or location.
+        - If user prefers Onsite: Score 1.0 if NOT 'remote' in title/desc (simplistic but better than nothing).
+        - If user prefers Hybrid/Both: Score 1.0 (neutral).
+        """
+        # Default to Hybrid / Both if not set
+        pref = (user_preference or "Hybrid / Both").lower()
+        
+        if "hybrid" in pref or "both" in pref:
+            return 1.0 # Neutral match for hybrid/both
+            
+        title_lower = job_title.lower()
+        desc_lower = job_description.lower()
+        loc_lower = (job_location or "").lower()
+        
+        is_job_remote = any("remote" in text for text in [title_lower, desc_lower, loc_lower])
+        
+        if "remote" in pref:
+            return 1.0 if is_job_remote else 0.0
+        
+        if "onsite" in pref:
+            return 0.0 if is_job_remote else 1.0
+            
+        return 1.0
 
     def get_match_label(self, total_score: float) -> str:
         perc = total_score * 100
@@ -112,6 +139,7 @@ class JobMatchingService:
         user_skills = self.normalize_list(raw_skills)
         user_interests = self.normalize_list(raw_interests)
         user_aspirations = self.normalize_list(raw_aspirations)
+        user_work_pref = user_res.get("work_preference")
 
         jobs_res = await db.list_active_jobs(skip=0, limit=200)
 
@@ -125,8 +153,16 @@ class JobMatchingService:
             skill_score = self.calculate_skill_score(user_skills, job_required)
             interest_score = self.calculate_interest_score(user_interests, job_tags, job.get("title", ""))
             aspiration_score = self.calculate_aspiration_score(user_aspirations, job_tags, job.get("title", ""))
+            work_pref_score = self.calculate_work_preference_score(
+                user_work_pref, 
+                job.get("title", ""), 
+                job.get("description_raw", ""), 
+                job.get("location")
+            )
             
-            final_score = (skill_score * 0.50) + (interest_score * 0.25) + (aspiration_score * 0.25)
+            # Recalculate Weights:
+            # Skill: 0.40, Interest: 0.20, Aspiration: 0.20, Work Pref: 0.20
+            final_score = (skill_score * 0.40) + (interest_score * 0.20) + (aspiration_score * 0.20) + (work_pref_score * 0.20)
             
             label = self.get_match_label(final_score)
             if skill_score < 0.2 and (interest_score > 0 or aspiration_score > 0):
@@ -147,6 +183,7 @@ class JobMatchingService:
                 "skills_score": round(skill_score * 100),
                 "interests_score": round(interest_score * 100),
                 "aspirations_score": round(aspiration_score * 100),
+                "work_preference_score": round(work_pref_score * 100),
                 "match_label": label,
                 "matched_skills": matched_skills,
                 "missing_skills": missing_skills
