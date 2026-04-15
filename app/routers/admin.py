@@ -10,17 +10,27 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel
 
 from app.dependencies import get_ai_service, get_db, get_embedding_service
+from app.domain.models import MockInterviewAdminReview
 from app.ports.ai_port import AIPort
 from app.ports.database_port import DatabasePort
 from app.ports.embedding_port import EmbeddingPort
 from app.services.auth_service import get_current_user
 from app.services.chat_service import ChatService
 from app.services.enrichment_service import EnrichmentService
+from app.services.mock_interview_service import MockInterviewService
 from app.scheduler import trigger_ingestion # Manual trigger import
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+
+def _require_admin(current_user: dict[str, Any]) -> None:
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can access this endpoint",
+        )
 
 
 @router.get("/sessions", status_code=status.HTTP_200_OK)
@@ -31,11 +41,7 @@ async def get_all_sessions(
     """
     Get all active chat sessions for the Control Tower.
     """
-    if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view all sessions",
-        )
+    _require_admin(current_user)
     
     sessions = await db.get_all_chat_sessions()
     return sessions
@@ -50,11 +56,7 @@ async def get_session_details(
     """
     Get full details for a specific chat session (Admin only).
     """
-    if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view session details",
-        )
+    _require_admin(current_user)
     
     session = await db.get_chat_session(session_id)
     if not session:
@@ -77,11 +79,7 @@ async def intercept_session(
     Injects a system notification into the chat log and pushes it
     live to the user via their active WebSocket connection.
     """
-    if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can intercept sessions",
-        )
+    _require_admin(current_user)
 
     session = await db.get_chat_session(session_id)
     if not session:
@@ -130,8 +128,7 @@ async def send_admin_message(
     The message is saved to the conversation log and pushed
     live to the seeker's active WebSocket connection.
     """
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins only")
+    _require_admin(current_user)
 
     session = await db.get_chat_session(session_id)
     if not session:
@@ -173,11 +170,7 @@ async def release_session(
     Admin releases a chat session back to the AI coach.
     Sets is_intercepted = False and injects a resumption notification.
     """
-    if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can release sessions",
-        )
+    _require_admin(current_user)
 
     session = await db.get_chat_session(session_id)
     if not session:
@@ -212,6 +205,56 @@ async def release_session(
         pass
 
     return {"ok": True, "message": "Session released to AI coach"}
+
+
+@router.get("/mock-interviews", status_code=status.HTTP_200_OK)
+async def list_mock_interview_reviews(
+    status: str = "all",
+    search: str = "",
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """Admin review desk list for mock interviews."""
+    _require_admin(current_user)
+    if status not in {"pending_review", "reviewed", "all"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="status must be one of: pending_review, reviewed, all",
+        )
+    svc = MockInterviewService(db=db)
+    return await svc.list_admin_interviews(status_filter=status, search=search)
+
+
+@router.get("/mock-interviews/{interview_id}", status_code=status.HTTP_200_OK)
+async def get_mock_interview_review_detail(
+    interview_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """Full admin detail for a mock interview review."""
+    _require_admin(current_user)
+    svc = MockInterviewService(db=db)
+    try:
+        return await svc.get_interview_details(interview_id, current_user)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.patch("/mock-interviews/{interview_id}/review", status_code=status.HTTP_200_OK)
+@router.post("/mock-interviews/{interview_id}/review", status_code=status.HTTP_200_OK)
+async def review_mock_interview(
+    interview_id: str,
+    body: MockInterviewAdminReview,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """Save admin-authored feedback and mark the interview as reviewed."""
+    _require_admin(current_user)
+    svc = MockInterviewService(db=db)
+    try:
+        return await svc.submit_admin_review(interview_id, body)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 
 

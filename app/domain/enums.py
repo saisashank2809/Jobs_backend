@@ -17,7 +17,6 @@ class ChatStatus(str, Enum):
 
 class MockInterviewStatus(str, Enum):
     IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
     PENDING_REVIEW = "pending_review"
     REVIEWED = "reviewed"
 

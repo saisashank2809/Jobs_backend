@@ -250,21 +250,22 @@ class SupabaseAdapter(DatabasePort):
     async def list_user_mock_interviews(self, user_id: str) -> list[dict[str, Any]]:
         result = (
             self._client.table("mock_interviews_jobs")
-            .select("*, jobs_jobs(title)")
+            .select("*, jobs_jobs(title, company_name)")
             .eq("user_id", user_id)
             .order("created_at", desc=True)
             .execute()
         )
         return result.data or []
 
-    async def list_pending_reviews(self) -> list[dict[str, Any]]:
-        result = (
+    async def list_admin_mock_interviews(self, status_filter: str = "all") -> list[dict[str, Any]]:
+        query = (
             self._client.table("mock_interviews_jobs")
-            .select("*, jobs_jobs(title), users_jobs(full_name, email)")
-            .eq("status", "pending_review")
+            .select("*, jobs_jobs(title, company_name), users_jobs(full_name, email)")
             .order("created_at", desc=True)
-            .execute()
         )
+        if status_filter != "all":
+            query = query.eq("status", status_filter)
+        result = query.execute()
         return result.data or []
 
     # ── Job Description Hash ───────────────────────────────────

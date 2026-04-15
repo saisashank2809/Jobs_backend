@@ -247,27 +247,91 @@ class MockScorecard(BaseModel):
     summary_notes: str
 
 
+class MockInterviewAdminReview(BaseModel):
+    """Admin-authored review attached after manual evaluation."""
+
+    overall_summary: str
+    strengths: list[str] = Field(default_factory=list)
+    improvements: list[str] = Field(default_factory=list)
+    topics_to_work_on: list[str] = Field(default_factory=list)
+    next_steps: str
+    reviewer_name: str
+    reviewer_id: str | None = None
+    feedback_markdown: str
+
+
+class MockInterviewStoredScorecard(BaseModel):
+    """Stored metadata for a submitted mock interview review workflow."""
+
+    interview_type: str | None = None
+    duration_minutes: int | float | None = None
+    user_transcript: list[str] = Field(default_factory=list)
+    ai_transcript: list[str] = Field(default_factory=list)
+    combined_transcript: list[dict[str, str]] = Field(default_factory=list)
+    review_state: str | None = None
+    submitted_at: datetime | None = None
+    admin_review: MockInterviewAdminReview | None = None
+
+
 class MockInterview(BaseModel):
     """Full mock interview record."""
 
     id: UUID
     user_id: UUID
-    job_id: UUID
+    job_id: UUID | None = None
     transcript: list[dict[str, str]] = Field(default_factory=list)
-    ai_scorecard: MockScorecard | None = None
+    ai_scorecard: MockInterviewStoredScorecard | None = None
     expert_feedback: str | None = None
     status: MockInterviewStatus
     created_at: datetime | None = None
+    updated_at: datetime | None = None
+    reviewed_at: datetime | None = None
 
 
 class MockInterviewStart(BaseModel):
     """Request to start a mock interview."""
-    job_id: UUID
+    job_id: UUID | None = None
 
 
 class MockInterviewSubmit(BaseModel):
-    """Request to submit mock interview answers."""
-    answers: list[str]
+    """Request to submit a completed interview for admin review."""
+
+    answers: list[str] = Field(default_factory=list)
+    transcript: list[dict[str, str]] = Field(default_factory=list)
+    interview_type: str | None = None
+    duration_minutes: int | float | None = None
+    user_transcript: list[str] = Field(default_factory=list)
+    ai_transcript: list[str] = Field(default_factory=list)
+    combined_transcript: list[dict[str, str]] = Field(default_factory=list)
+    submitted_at: datetime | None = None
+
+
+class MockInterviewAdminSummary(BaseModel):
+    """Admin dashboard list row for a mock interview."""
+
+    interview_id: UUID
+    user_full_name: str | None = None
+    user_email: str | None = None
+    status: MockInterviewStatus
+    created_at: datetime | None = None
+    job_title: str | None = None
+    company_name: str | None = None
+
+
+class MockInterviewAdminDetail(BaseModel):
+    """Admin detail response for a specific mock interview."""
+
+    interview_id: UUID
+    user_name: str | None = None
+    user_email: str | None = None
+    transcript: list[dict[str, str]] = Field(default_factory=list)
+    user_transcript: list[str] = Field(default_factory=list)
+    ai_transcript: list[str] = Field(default_factory=list)
+    expert_feedback: str | None = None
+    status: MockInterviewStatus
+    admin_review: MockInterviewAdminReview | None = None
+    job_title: str | None = None
+    company_name: str | None = None
 
 
 # ── Documents ─────────────────────────────────────────────────

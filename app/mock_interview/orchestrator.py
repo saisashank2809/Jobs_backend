@@ -61,10 +61,15 @@ async def orchestrate(websocket: WebSocket, audio_data: bytes, session_id: str) 
         # Auto-detect mode...
         if not current_mode:
             lower = text.lower()
-            if any(w in lower for w in ["hr", "human resources", "behavioral", "behaviour"]):
+            hr_keywords = ["hr", "human resources", "behavioral", "behaviour"]
+            tech_keywords = [
+                "technical", "tech", "coding",
+                "programming", "system design"
+            ]
+            if any(w in lower for w in hr_keywords):
                 current_mode = "hr"
                 await set_interview_mode(session_id, "hr")
-            elif any(w in lower for w in ["technical", "tech", "coding", "programming", "system design"]):
+            elif any(w in lower for w in tech_keywords):
                 current_mode = "technical"
                 await set_interview_mode(session_id, "technical")
 
@@ -74,9 +79,16 @@ async def orchestrate(websocket: WebSocket, audio_data: bytes, session_id: str) 
 
         context_parts: list[str] = []
         if q_count >= 7:
-             context_parts.append("[SYSTEM_NOTE]: This is the final question. After this answer, conclude the interview and suggest the candidate types /analyze for the final report.")
+            context_parts.append(
+                "[SYSTEM_NOTE]: This is the final question. After this "
+                "answer, conclude the interview and suggest the candidate "
+                "types /analyze for the final report."
+            )
         elif q_count >= 5:
-             context_parts.append(f"[SYSTEM_NOTE]: You have asked {q_count} questions. You should aim to conclude the interview soon (within 7 questions total).")
+            context_parts.append(
+                f"[SYSTEM_NOTE]: You have asked {q_count} questions. You "
+                "should aim to conclude the interview soon (within 7 total)."
+            )
 
         if current_mode == "hr":
             bq = await get_behavioral_questions()

@@ -33,7 +33,6 @@ from app.mock_interview.services.session import (
     set_interview_mode,
     get_interview_mode,
 )
-from app.mock_interview.services.evaluation import evaluate_transcript
 from app.mock_interview.services.context import get_context
 from app.mock_interview.services.llm import generate_response
 from app.mock_interview.services.tts import text_to_speech_stream
@@ -135,11 +134,14 @@ async def analyze_resume(
 
 @router.get("/evaluate")
 async def get_evaluation(session_id: str = "default_session"):
-    """Evaluate the completed interview transcript and return a JSON scorecard."""
+    """Immediate AI evaluation is disabled in favor of admin review."""
     transcript = await get_full_transcript_text(session_id)
     if not transcript:
         return {"error": "No interview transcript found for this session."}
-    return await evaluate_transcript(transcript, role_name="Software Engineer")
+    return {
+        "status": "pending_review",
+        "message": "Immediate AI evaluation is disabled. Submit the interview for admin review.",
+    }
 
 
 # ── WebSocket Endpoint ─────────────────────────────────────────

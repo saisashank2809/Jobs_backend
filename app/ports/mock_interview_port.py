@@ -25,6 +25,6 @@ class MockInterviewPort(ABC):
         ...
 
     @abstractmethod
-    async def list_pending_reviews(self) -> list[dict[str, Any]]:
-        """Fetch all mock interviews with 'pending_review' status for admin dashboard."""
+    async def list_admin_mock_interviews(self, status_filter: str = "all") -> list[dict[str, Any]]:
+        """Fetch mock interviews for the admin dashboard."""
         ...
