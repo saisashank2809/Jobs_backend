@@ -115,6 +115,7 @@ class MatchingService:
         job_required = job_matcher.normalize_list(job.get("skills_required") or [])
         job_tags = job_matcher.normalize_list(job.get("tags") or [])
 
+        experience_score = job_matcher.calculate_experience_score(user.get("experience"), job.get("experience"))
         skill_score = job_matcher.calculate_skill_score(user_skills, job_required)
         interest_score = job_matcher.calculate_interest_score(user_interests, job_tags, job.get("title", ""))
         aspiration_score = job_matcher.calculate_aspiration_score(user_aspirations, job_tags, job.get("title", ""))
@@ -125,13 +126,18 @@ class MatchingService:
             job.get("location")
         )
 
-        final_match_score = (skill_score * 0.40) + (interest_score * 0.20) + (aspiration_score * 0.20) + (work_pref_score * 0.20)
+        final_match_score = (skill_score * 0.35) + \
+                           (experience_score * 0.25) + \
+                           (interest_score * 0.15) + \
+                           (aspiration_score * 0.15) + \
+                           (work_pref_score * 0.10)
 
         return MatchResult(
             job_id=job_id,
             similarity_score=round(score, 4),
             match_score=round(final_match_score * 100),
             skills_score=round(skill_score * 100),
+            experience_score=round(experience_score * 100),
             interests_score=round(interest_score * 100),
             aspirations_score=round(aspiration_score * 100),
             work_preference_score=round(work_pref_score * 100),

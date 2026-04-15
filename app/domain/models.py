@@ -34,6 +34,9 @@ class UserProfile(BaseModel):
     aspirations: list[str] | None = Field(default_factory=list)
     avatar_url: str | None = None
     work_preference: str | None = "Hybrid / Both"
+    experience: str | None = None
+    work_experience_position: str | None = None
+    work_experience_description: str | None = None
     created_at: datetime | None = None
 
 
@@ -116,6 +119,7 @@ class MatchResult(BaseModel):
     skills_score: int | None = None
     interests_score: int | None = None
     aspirations_score: int | None = None
+    experience_score: int | None = None
     work_preference_score: int | None = None
     gap_detected: bool
     gap_analysis: str | None = None
@@ -152,6 +156,9 @@ class ProfileUpdateRequest(BaseModel):
     aspirations: list[str] | None = Field(None, max_length=5)
     avatar_url: str | None = None
     work_preference: str | None = None
+    experience: str | None = None
+    work_experience_position: str | None = None
+    work_experience_description: str | None = None
 
 
 # ── AI Enrichment ─────────────────────────────────────────────

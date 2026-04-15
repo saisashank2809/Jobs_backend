@@ -28,6 +28,9 @@ class SignUpRequest(BaseModel):
     aspirations: list[str] = Field(default_factory=list, max_length=5)
     avatar_url: str | None = None
     work_preference: str = "Hybrid / Both"
+    experience: str = ""
+    work_experience_position: str = ""
+    work_experience_description: str = ""
 
 
 class SignInRequest(BaseModel):
@@ -113,6 +116,9 @@ async def signup(req: SignUpRequest):
                 "aspirations": req.aspirations,
                 "avatar_url": req.avatar_url,
                 "work_preference": req.work_preference,
+                "experience": req.experience,
+                "work_experience_position": req.work_experience_position,
+                "work_experience_description": req.work_experience_description,
             }).execute()
         else:
             # Update password column for existing row (created by trigger)
@@ -128,6 +134,9 @@ async def signup(req: SignUpRequest):
                 "aspirations": req.aspirations,
                 "avatar_url": req.avatar_url,
                 "work_preference": req.work_preference,
+                "experience": req.experience,
+                "work_experience_position": req.work_experience_position,
+                "work_experience_description": req.work_experience_description,
             }).eq("id", user.id).execute()
 
         # 3. Sign in to get tokens (using the anon-key client approach)

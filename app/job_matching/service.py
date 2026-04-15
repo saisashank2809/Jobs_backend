@@ -20,6 +20,16 @@ class JobMatchingService:
     - Aspiration Match: 0.25
     """
 
+    # Mapping of user experience labels to (min_years, max_years)
+    EXP_LEVELS = {
+        "Fresher": (0, 0),
+        "0-1 Year": (0, 1),
+        "1-3 Years": (1, 3),
+        "3-5 Years": (3, 5),
+        "5-10 Years": (5, 10),
+        "10+ Years": (10, 50)
+    }
+
     def normalize_list(self, items: list[str] | str | None) -> list[str]:
         """Lowercase, trim, and unique-ify a list of strings."""
         if not items:
@@ -77,15 +87,60 @@ class JobMatchingService:
                 return 0.25
         return 0.0
 
-    def calculate_experience_score(self, user_is_junior: bool, job_experience: str | None) -> float:
-        if not job_experience or not user_is_junior:
-            return 0.0
-        exp_lower = job_experience.lower()
-        junior_keywords = ["fresher", "junior", "intern", "entry level", "0-1", "0-2", "0 years", "graduate"]
-        for kw in junior_keywords:
-            if kw in exp_lower:
-                return 0.1
-        return 0.0
+    def parse_experience_string(self, exp_str: str | None) -> tuple[int, int]:
+        """
+        Heuristic to extract min/max years from strings like '3+ years', '1-5 years', 'Freshers'.
+        Returns (min_years, max_years).
+        """
+        if not exp_str:
+            return (0, 50)
+            
+        s = exp_str.lower()
+        if "fresher" in s or "graduate" in s or "intern" in s:
+            return (0, 0)
+            
+        # Look for patterns like '3-5', '3 to 5', '3+'
+        import re
+        range_match = re.search(r'(\d+)\s*(?:-|to)\s*(\d+)', s)
+        if range_match:
+            return (int(range_match.group(1)), int(range_match.group(2)))
+            
+        plus_match = re.search(r'(\d+)\s*\+', s)
+        if plus_match:
+            return (int(plus_match.group(1)), 50)
+            
+        single_digit = re.search(r'(\d+)', s)
+        if single_digit:
+            val = int(single_digit.group(1))
+            return (val, val + 2) # Assume a range if only one number is given
+            
+        return (0, 50)
+
+    def calculate_experience_score(self, user_exp_label: str | None, job_exp_req: str | None) -> float:
+        """
+        Compares user's experience level against job requirement.
+        Weights:
+        - Perfect fit: 1.0
+        - Close fit (within 1-2 years): 0.7
+        - Over-qualified: 0.6
+        - Under-qualified: 0.2
+        """
+        user_min, user_max = self.EXP_LEVELS.get(user_exp_label or "Fresher", (0, 0))
+        job_min, job_max = self.parse_experience_string(job_exp_req)
+        
+        # Scenario 1: Exact overlap or within range
+        if user_max >= job_min and user_min <= job_max:
+            return 1.0
+            
+        # Scenario 2: Overqualified
+        if user_min > job_max:
+            return 0.6
+            
+        # Scenario 3: Slightly underqualified (e.g. 1 year diff)
+        if (job_min - user_max) <= 2:
+            return 0.7
+            
+        return 0.2
     
     def calculate_work_preference_score(self, user_preference: str | None, job_title: str, job_description: str, job_location: str | None) -> float:
         """
@@ -161,8 +216,14 @@ class JobMatchingService:
             )
             
             # Recalculate Weights:
-            # Skill: 0.40, Interest: 0.20, Aspiration: 0.20, Work Pref: 0.20
-            final_score = (skill_score * 0.40) + (interest_score * 0.20) + (aspiration_score * 0.20) + (work_pref_score * 0.20)
+            # Skill: 0.35, Experience: 0.25, Interest: 0.15, Aspiration: 0.15, Work Pref: 0.10
+            experience_score = self.calculate_experience_score(user_res.get("experience"), job.get("experience"))
+            
+            final_score = (skill_score * 0.35) + \
+                          (experience_score * 0.25) + \
+                          (interest_score * 0.15) + \
+                          (aspiration_score * 0.15) + \
+                          (work_pref_score * 0.10)
             
             label = self.get_match_label(final_score)
             if skill_score < 0.2 and (interest_score > 0 or aspiration_score > 0):
@@ -181,6 +242,7 @@ class JobMatchingService:
                 "salary_range": job.get("salary_range"),
                 "match_score": round(final_score * 100),
                 "skills_score": round(skill_score * 100),
+                "experience_score": round(experience_score * 100),
                 "interests_score": round(interest_score * 100),
                 "aspirations_score": round(aspiration_score * 100),
                 "work_preference_score": round(work_pref_score * 100),
