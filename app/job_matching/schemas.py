@@ -12,6 +12,8 @@ class JobMatch(BaseModel):
     created_at: str | None = None
     skills_required: list[str] | None = None
     salary_range: str | None = None
+    qualification: str | None = None
+    experience_range: str | None = None
     match_score: int
     skills_score: int | None = None
     interests_score: int | None = None

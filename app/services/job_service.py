@@ -6,6 +6,7 @@ Single Responsibility: only handles job data operations.
 from typing import Any
 
 from app.ports.database_port import DatabasePort
+from app.services.job_summary_service import enrich_job_summary
 
 
 class JobService:
@@ -28,15 +29,18 @@ class JobService:
 
     async def list_by_provider(self, provider_id: str) -> list[dict[str, Any]]:
         """List all jobs created by a given provider."""
-        return await self._db.list_jobs_by_provider(provider_id)
+        jobs = await self._db.list_jobs_by_provider(provider_id)
+        return [enrich_job_summary(job) for job in jobs]
 
     async def list_feed(self, skip: int = 0, limit: int = 20) -> list[dict[str, Any]]:
         """Paginated list of active jobs for the job seeker feed."""
-        return await self._db.list_active_jobs(skip=skip, limit=limit)
+        jobs = await self._db.list_active_jobs(skip=skip, limit=limit)
+        return [enrich_job_summary(job) for job in jobs]
 
     async def get_details(self, job_id: str) -> dict[str, Any] | None:
         """Get full 4-Pillar job details."""
-        return await self._db.get_job(job_id)
+        job = await self._db.get_job(job_id)
+        return enrich_job_summary(job) if job else None
 
     async def delete_job(self, job_id: str, provider_id: str) -> bool:
         """Permanently delete a job, verifying ownership first."""

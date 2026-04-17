@@ -12,6 +12,7 @@ from app.ports.ai_port import AIPort  # type: ignore
 from app.ports.database_port import DatabasePort  # type: ignore
 from app.ports.embedding_port import EmbeddingPort  # type: ignore
 from app.domain.models import AIEnrichment  # type: ignore
+from app.services.job_summary_service import build_role_overview, normalize_skills, mine_salary_from_text  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -61,35 +62,54 @@ class EnrichmentService:
             prep_data = [q.model_dump() for q in enrichment.prep_questions]
             
             # Use extracted skills if the job has none (e.g. scraped jobs)
-            final_skills = skills if skills else enrichment.extracted_skills
+            final_skills = normalize_skills(
+                {
+                    "title": title,
+                    "description_raw": description,
+                    "skills_required": skills if skills else enrichment.extracted_skills,
+                    "key_skills": enrichment.extracted_skills,
+                },
+                max_items=8,
+            )
+            role_overview = build_role_overview(
+                {
+                    "title": title,
+                    "company_name": company,
+                    "description_raw": description,
+                    "skills_required": final_skills,
+                    "role_overview": enrichment.role_overview,
+                    "location": job.get("location"),
+                }
+            )
+
+            # Mine real salary from description — only if not already set
+            existing_salary = job.get("salary_range")
+            has_real_salary = existing_salary and str(existing_salary).strip().lower() not in ("none", "not specified", "")
+            mined_salary = mine_salary_from_text(description) if not has_real_salary else None
+
+            update_payload = {
+                "resume_guide_generated": enrichment.resume_guide,
+                "prep_guide_generated": prep_data,
+                "skills_required": final_skills,
+                "role_overview": role_overview,
+                "embedding": embedding,
+                "qualification": enrichment.qualification,
+                "experience": enrichment.experience,
+            }
+            # Only persist salary if we mined a real one from the description
+            if mined_salary:
+                update_payload["salary_range"] = mined_salary
 
             try:
-                await self._db.update_job(
-                    job_id,
-                    {
-                        "resume_guide_generated": enrichment.resume_guide,
-                        "prep_guide_generated": prep_data,
-                        "skills_required": final_skills,
-                        "embedding": embedding,
-                        "salary_range": enrichment.estimated_salary_range,
-                        "qualification": enrichment.qualification,
-                        "experience": enrichment.experience,
-                    },
-                )
+                await self._db.update_job(job_id, update_payload)
             except Exception as e:
-                # Fallback: if columns like 'experience' or 'qualification' don't exist, try updating without them
-                if "column" in str(e).lower() and ("experience" in str(e).lower() or "qualification" in str(e).lower()):
-                    logger.warning(f"Database schema mismatch for {job_id}. Retrying without extra fields. Error: {e}")
-                    await self._db.update_job(
-                        job_id,
-                        {
-                            "resume_guide_generated": enrichment.resume_guide,
-                            "prep_guide_generated": prep_data,
-                            "skills_required": final_skills,
-                            "embedding": embedding,
-                            "salary_range": enrichment.estimated_salary_range,
-                        },
-                    )
+                error_text = str(e).lower()
+                if "column" in error_text:
+                    logger.warning("Database schema mismatch for %s. Retrying with a reduced payload. Error: %s", job_id, e)
+                    fallback_payload = dict(update_payload)
+                    for field in ("role_overview", "qualification", "experience"):
+                        fallback_payload.pop(field, None)
+                    await self._db.update_job(job_id, fallback_payload)
                 else:
                     raise e
 
