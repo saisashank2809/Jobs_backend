@@ -8,6 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from app.ports.database_port import DatabasePort
+from app.services.job_summary_service import enrich_job_summary
 
 logger = logging.getLogger(__name__)
 
@@ -93,10 +94,10 @@ class JobMatchingService:
         Returns (min_years, max_years).
         """
         if not exp_str:
-            return (0, 50)
+            return (2, 50) # Assume experienced if not explicitly specified
             
         s = exp_str.lower()
-        if "fresher" in s or "graduate" in s or "intern" in s:
+        if "fresher" in s or "graduate" in s or "intern" in s or "entry" in s:
             return (0, 0)
             
         # Look for patterns like '3-5', '3 to 5', '3+'
@@ -114,7 +115,7 @@ class JobMatchingService:
             val = int(single_digit.group(1))
             return (val, val + 2) # Assume a range if only one number is given
             
-        return (0, 50)
+        return (2, 50) # Fallback to experienced if unparseable
 
     def calculate_experience_score(self, user_exp_label: str | None, job_exp_req: str | None) -> float:
         """
@@ -125,7 +126,13 @@ class JobMatchingService:
         - Over-qualified: 0.6
         - Under-qualified: 0.2
         """
-        user_min, user_max = self.EXP_LEVELS.get(user_exp_label or "Fresher", (0, 0))
+        target_exp = (str(user_exp_label) if user_exp_label else "fresher").lower()
+        user_min, user_max = (0, 0)
+        for k, v in self.EXP_LEVELS.items():
+            if k.lower() == target_exp:
+                user_min, user_max = v
+                break
+        
         job_min, job_max = self.parse_experience_string(job_exp_req)
         
         # Scenario 1: Exact overlap or within range
@@ -195,11 +202,30 @@ class JobMatchingService:
         user_interests = self.normalize_list(raw_interests)
         user_aspirations = self.normalize_list(raw_aspirations)
         user_work_pref = user_res.get("work_preference")
+        
+        user_exp = user_res.get("experience")
+        target_exp = (str(user_exp) if user_exp else "fresher").lower()
+        user_min, user_max = (0, 0)
+        for k, v in self.EXP_LEVELS.items():
+            if k.lower() == target_exp:
+                user_min, user_max = v
+                break
 
         jobs_res = await db.list_active_jobs(skip=0, limit=200)
 
         matches = []
         for job in jobs_res:
+            enriched_job = enrich_job_summary(job)
+            job_exp = enriched_job.get("experience_range") or job.get("experience_range") or job.get("experience")
+            job_min, _ = self.parse_experience_string(job_exp)
+            is_fresher_candidate = user_max <= 2
+            
+            # Hide jobs that require more experience than the candidate possesses.
+            # E.g. A user with "1-3 Years" (user_max = 3) won't see "5+ Years" (job_min = 5).
+            # A user with "5-10 Years" (user_max = 10) can still see "0-1 Year" (job_min = 0).
+            if job_min > user_max:
+                continue
+                
             job_required = self.normalize_list(job.get("skills_required") or [])
             job_tags = self.normalize_list(job.get("tags") or [])
             
@@ -236,10 +262,12 @@ class JobMatchingService:
                 "id": job.get("id"),
                 "title": job.get("title", ""),
                 "company_name": job.get("company_name", ""),
-                "location": job.get("location"),
+                "location": enriched_job.get("location"),
                 "created_at": job.get("created_at"),
                 "skills_required": job.get("skills_required"),
                 "salary_range": job.get("salary_range"),
+                "qualification": enriched_job.get("qualification"),
+                "experience_range": enriched_job.get("experience_range"),
                 "match_score": round(final_score * 100),
                 "skills_score": round(skill_score * 100),
                 "experience_score": round(experience_score * 100),

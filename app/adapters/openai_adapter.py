@@ -40,6 +40,9 @@ class OpenAIAdapter(AIPort):
                         "you MUST produce exactly 5 resume optimization bullet points, "
                         "exactly 5 technical interview questions, AND a list of the top 5-10 "
                         "technical skills required for the role based on the description. "
+                        "ALSO produce exactly 6-8 short, plain-language sentences for a role overview. "
+                        "These sentences must be easy for both freshers and experienced candidates to understand. "
+                        "Keep them simple, practical, and free of corporate filler. "
                         "For each interview question, provide a specific 'answer_strategy' "
                         "that explains EXACTLY what the interviewer is looking for and "
                         "what key technical concepts or experiences the candidate should highlight. "
@@ -58,7 +61,7 @@ class OpenAIAdapter(AIPort):
                         f"## Role: {role_header}\n\n"
                         f"## Job Description\n{description}\n\n"
                         f"## Required Skills\n{skills_text}\n\n"
-                        "Generate the resume guide and prep questions now. "
+                        "Generate the resume guide, role overview, and prep questions now. "
                         "Make them specific to this exact role and company."
                     ),
                 },

@@ -78,7 +78,14 @@ class JobDetail(BaseModel):
     id: UUID
     title: str
     description_raw: str
+    short_description: str | None = None
+    role_overview: list[str] | None = None
+    key_skills: list[str] | None = None
     skills_required: list[str] | None = None
+    qualification: str | None = None
+    experience_range: str | None = None
+    location: str | None = None
+    salary_range: str | None = None
     resume_guide_generated: list[str] | None = None
     prep_guide_generated: list[InterviewQuestion | str | dict] | None = None
     status: str = "active"
@@ -93,7 +100,14 @@ class JobFeedItem(BaseModel):
 
     id: UUID
     title: str
+    short_description: str | None = None
+    role_overview: list[str] | None = None
+    key_skills: list[str] | None = None
     skills_required: list[str] | None = None
+    qualification: str | None = None
+    experience_range: str | None = None
+    location: str | None = None
+    salary_range: str | None = None
     status: str = "active"
     company_name: str | None = None
     external_apply_url: str | None = None
@@ -191,6 +205,12 @@ class AIEnrichment(BaseModel):
         min_length=0,
         max_length=15,
         description="Top 5-10 technical skills extracted from the job description",
+    )
+    role_overview: list[str] = Field(
+        default_factory=list,
+        min_length=6,
+        max_length=8,
+        description="6-8 short, plain-language sentences that explain the role clearly.",
     )
     estimated_salary_range: str | None = Field(
         None,
