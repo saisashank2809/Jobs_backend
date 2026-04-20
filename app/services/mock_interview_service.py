@@ -281,6 +281,7 @@ class MockInterviewService:
             "created_at": interview.get("created_at"),
             "updated_at": interview.get("updated_at"),
             "reviewed_at": interview.get("reviewed_at"),
+            "viewed_at": interview.get("viewed_at"),
             "job_title": job.get("title"),
             "company_name": job.get("company_name"),
             "expert_feedback": interview.get("expert_feedback") if interview.get("status") == MockInterviewStatus.REVIEWED.value else None,
@@ -294,6 +295,7 @@ class MockInterviewService:
             "created_at": interview.get("created_at"),
             "updated_at": interview.get("updated_at"),
             "reviewed_at": interview.get("reviewed_at"),
+            "viewed_at": interview.get("viewed_at"),
             "transcript": interview.get("transcript") or [],
             "job_title": (job or {}).get("title"),
             "company_name": (job or {}).get("company_name"),
@@ -304,6 +306,18 @@ class MockInterviewService:
         else:
             detail["expert_feedback"] = None
         return detail
+
+    async def mark_interview_as_viewed(self, interview_id: str, user_id: str) -> None:
+        """Update the viewed_at timestamp for a mock interview."""
+        await self._get_owned_interview(interview_id, user_id)
+        now = datetime.now(timezone.utc).isoformat()
+        await self._db.update_mock_interview(
+            interview_id,
+            {
+                "viewed_at": now,
+                "updated_at": now,
+            },
+        )
 
     def _serialize_admin_list_item(self, interview: dict[str, Any]) -> dict[str, Any]:
         user = interview.get("users_jobs") or {}

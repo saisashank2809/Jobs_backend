@@ -5,7 +5,8 @@ ALTER TABLE IF EXISTS mock_interviews_jobs
 
 ALTER TABLE IF EXISTS mock_interviews_jobs
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ NULL;
+    ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ NULL,
+    ADD COLUMN IF NOT EXISTS viewed_at TIMESTAMPTZ NULL;
 
 ALTER TABLE IF EXISTS mock_interviews_jobs
     ALTER COLUMN transcript SET DEFAULT '[]'::jsonb;

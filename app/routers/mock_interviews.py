@@ -53,6 +53,17 @@ async def request_expert_review(
     await svc.request_review(interview_id, str(current_user["id"]))
     return None
 
+@router.post("/{interview_id}/view", status_code=status.HTTP_204_NO_CONTENT)
+async def mark_interview_as_viewed(
+    interview_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """Mark a mock interview as viewed by the user."""
+    svc = MockInterviewService(db=db)
+    await svc.mark_interview_as_viewed(interview_id, str(current_user["id"]))
+    return None
+
 @router.get("/my", response_model=list[dict])
 async def get_my_mock_interviews(
     current_user: dict[str, Any] = Depends(get_current_user),
