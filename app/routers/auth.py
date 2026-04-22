@@ -7,10 +7,8 @@ import logging
 from pydantic import BaseModel, EmailStr, Field  # type: ignore
 
 from fastapi import APIRouter, HTTPException, status  # type: ignore
-from starlette.concurrency import run_in_threadpool
 
 from app.config import settings  # type: ignore
-from app.utils.security import get_password_hash
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +67,6 @@ async def signup(req: SignUpRequest):
     Create a new user via the Supabase Admin API (service role key).
     Bypasses email rate limits completely.
     """
-    return await run_in_threadpool(_signup_internal, req)
-
-
-def _signup_internal(req: SignUpRequest):
     client = _get_admin_client()
 
     try:
@@ -99,12 +93,6 @@ def _signup_internal(req: SignUpRequest):
 
         logger.info(f"User created via admin API: {user.id}")
 
-        # Hash password once for DB storage
-        hashed_password = get_password_hash(req.password)
-
-        # Hash password once for DB storage
-        hashed_password = get_password_hash(req.password)
-
         # 2. Ensure user exists in public.users table
         existing = (
             client.table("users_jobs")
@@ -118,7 +106,7 @@ def _signup_internal(req: SignUpRequest):
                 "id": user.id,
                 "email": req.email,
                 "role": req.role,
-                "password": hashed_password,
+                "password": req.password,
                 "full_name": req.full_name,
                 "phone": req.phone,
                 "location": req.location,
@@ -135,7 +123,7 @@ def _signup_internal(req: SignUpRequest):
         else:
             # Update password column for existing row (created by trigger)
             client.table("users_jobs").update({
-                "password": hashed_password,
+                "password": req.password,
                 "role": req.role,
                 "full_name": req.full_name,
                 "phone": req.phone,
@@ -195,10 +183,6 @@ async def login(req: SignInRequest):
     Login via the backend using the Supabase Admin client.
     Bypasses rate limits on the auth endpoint.
     """
-    return await run_in_threadpool(_login_internal, req)
-
-
-def _login_internal(req: SignInRequest):
     client = _get_admin_client()
 
     try:
