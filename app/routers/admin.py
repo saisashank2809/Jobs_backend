@@ -7,6 +7,7 @@ import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app.dependencies import get_ai_service, get_db, get_embedding_service
@@ -295,11 +296,13 @@ async def _reenrich_unenriched_jobs(db: DatabasePort, ai: AIPort, emb: Embedding
     enricher = EnrichmentService(db=db, ai=ai, embeddings=emb)
 
     # Query all jobs missing any enrichment data
-    result = (
-        db._client.table("jobs_jobs")
-        .select("id, title, company_name, prep_guide_generated, resume_guide_generated, embedding, status")
-        .execute()
-    )
+    def _get_jobs():
+        return (
+            db._client.table("jobs_jobs")
+            .select("id, title, company_name, prep_guide_generated, resume_guide_generated, embedding, status")
+            .execute()
+        )
+    result = await run_in_threadpool(_get_jobs)
     all_jobs = result.data or []
 
     unenriched = [

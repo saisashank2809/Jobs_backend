@@ -7,6 +7,7 @@ import logging
 from pydantic import BaseModel, EmailStr, Field  # type: ignore
 
 from fastapi import APIRouter, HTTPException, status  # type: ignore
+from starlette.concurrency import run_in_threadpool
 
 from app.config import settings  # type: ignore
 
@@ -71,18 +72,21 @@ async def signup(req: SignUpRequest):
 
     try:
         # 1. Create user via Admin API — auto-confirms, no email sent
-        response = client.auth.admin.create_user({
-            "email": req.email,
-            "password": req.password,
-            "email_confirm": True,
-            "user_metadata": {
-                "role": req.role,
-                "full_name": req.full_name,
-                "phone": req.phone,
-                "location": req.location,
-                "avatar_url": req.avatar_url
-            },
-        })
+        def _create_admin_user():
+            return client.auth.admin.create_user({
+                "email": req.email,
+                "password": req.password,
+                "email_confirm": True,
+                "user_metadata": {
+                    "role": req.role,
+                    "full_name": req.full_name,
+                    "phone": req.phone,
+                    "location": req.location,
+                    "avatar_url": req.avatar_url
+                },
+            })
+        
+        response = await run_in_threadpool(_create_admin_user)
 
         user = response.user
         if not user:
@@ -94,57 +98,62 @@ async def signup(req: SignUpRequest):
         logger.info(f"User created via admin API: {user.id}")
 
         # 2. Ensure user exists in public.users table
-        existing = (
-            client.table("users_jobs")
-            .select("id")
-            .eq("id", user.id)
-            .maybe_single()
-            .execute()
-        )
-        if not existing or not existing.data:
-            client.table("users_jobs").insert({
-                "id": user.id,
-                "email": req.email,
-                "role": req.role,
-                "password": req.password,
-                "full_name": req.full_name,
-                "phone": req.phone,
-                "location": req.location,
-                "skills": req.skills,
-                "interests": req.interests,
-                "dob": req.dob,
-                "aspirations": req.aspirations,
-                "avatar_url": req.avatar_url,
-                "work_preference": req.work_preference,
-                "experience": req.experience,
-                "work_experience_position": req.work_experience_position,
-                "work_experience_description": req.work_experience_description,
-            }).execute()
-        else:
-            # Update password column for existing row (created by trigger)
-            client.table("users_jobs").update({
-                "password": req.password,
-                "role": req.role,
-                "full_name": req.full_name,
-                "phone": req.phone,
-                "location": req.location,
-                "skills": req.skills,
-                "interests": req.interests,
-                "dob": req.dob,
-                "aspirations": req.aspirations,
-                "avatar_url": req.avatar_url,
-                "work_preference": req.work_preference,
-                "experience": req.experience,
-                "work_experience_position": req.work_experience_position,
-                "work_experience_description": req.work_experience_description,
-            }).eq("id", user.id).execute()
+        def _ensure_public_row():
+            existing = (
+                client.table("users_jobs")
+                .select("id")
+                .eq("id", user.id)
+                .maybe_single()
+                .execute()
+            )
+            if not existing or not existing.data:
+                client.table("users_jobs").insert({
+                    "id": user.id,
+                    "email": req.email,
+                    "role": req.role,
+                    "password": req.password,
+                    "full_name": req.full_name,
+                    "phone": req.phone,
+                    "location": req.location,
+                    "skills": req.skills,
+                    "interests": req.interests,
+                    "dob": req.dob,
+                    "aspirations": req.aspirations,
+                    "avatar_url": req.avatar_url,
+                    "work_preference": req.work_preference,
+                    "experience": req.experience,
+                    "work_experience_position": req.work_experience_position,
+                    "work_experience_description": req.work_experience_description,
+                }).execute()
+            else:
+                # Update password column for existing row (created by trigger)
+                client.table("users_jobs").update({
+                    "password": req.password,
+                    "role": req.role,
+                    "full_name": req.full_name,
+                    "phone": req.phone,
+                    "location": req.location,
+                    "skills": req.skills,
+                    "interests": req.interests,
+                    "dob": req.dob,
+                    "aspirations": req.aspirations,
+                    "avatar_url": req.avatar_url,
+                    "work_preference": req.work_preference,
+                    "experience": req.experience,
+                    "work_experience_position": req.work_experience_position,
+                    "work_experience_description": req.work_experience_description,
+                }).eq("id", user.id).execute()
+
+        await run_in_threadpool(_ensure_public_row)
 
         # 3. Sign in to get tokens (using the anon-key client approach)
-        #    We use the admin client to generate a session link instead
-        sign_in_response = client.auth.sign_in_with_password({
-            "email": req.email,
-            "password": req.password,
-        })
+        def _sign_in():
+            return client.auth.sign_in_with_password({
+                "email": req.email,
+                "password": req.password,
+            })
+            
+        sign_in_response = await run_in_threadpool(_sign_in)
 
         session = sign_in_response.session
         if not session:
@@ -186,10 +195,13 @@ async def login(req: SignInRequest):
     client = _get_admin_client()
 
     try:
-        response = client.auth.sign_in_with_password({
-            "email": req.email,
-            "password": req.password,
-        })
+        def _sign_in():
+            return client.auth.sign_in_with_password({
+                "email": req.email,
+                "password": req.password,
+            })
+            
+        response = await run_in_threadpool(_sign_in)
 
         session = response.session
         user = response.user
@@ -201,13 +213,16 @@ async def login(req: SignInRequest):
             )
 
         # Fetch role from public.users
-        profile = (
-            client.table("users_jobs")
-            .select("role")
-            .eq("id", user.id)
-            .maybe_single()
-            .execute()
-        )
+        def _get_role():
+            return (
+                client.table("users_jobs")
+                .select("role")
+                .eq("id", user.id)
+                .maybe_single()
+                .execute()
+            )
+        
+        profile = await run_in_threadpool(_get_role)
         role = profile.data.get("role") if profile and profile.data else None
 
         return AuthResponse(**{  # type: ignore

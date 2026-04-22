@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
 from supabase import create_client, Client
 from app.config import settings
 from app.services.graph_client import GraphClient
@@ -32,11 +33,13 @@ async def upload_document(
     file_bytes = await file.read()
     
     # 1. Store initial metadata in DB (Status: 'uploading')
-    insert_res = supabase_admin.table("jobs_resumes").insert({
-        "file_name": file.filename,
-        "status": "uploading"
-    }).execute()
-    
+    def _insert():
+        return supabase_admin.table("jobs_resumes").insert({
+            "file_name": file.filename,
+            "status": "uploading"
+        }).execute()
+        
+    insert_res = await run_in_threadpool(_insert)
     doc_id = insert_res.data[0]["doc_id"]
 
     try:
@@ -47,11 +50,14 @@ async def upload_document(
         )
         
         # 3. Update DB with OneDrive references (Status: 'uploaded')
-        update_res = supabase_admin.table("jobs_resumes").update({
-            "file_id": onedrive_meta["file_id"],
-            "url": onedrive_meta["url"],
-            "status": "uploaded"
-        }).eq("doc_id", doc_id).execute()
+        def _update():
+            return supabase_admin.table("jobs_resumes").update({
+                "file_id": onedrive_meta["file_id"],
+                "url": onedrive_meta["url"],
+                "status": "uploaded"
+            }).eq("doc_id", doc_id).execute()
+            
+        update_res = await run_in_threadpool(_update)
 
         # 4. Dispatch Celery Task for asynchronous processing
         process_rag_document.delay(doc_id)
@@ -65,5 +71,7 @@ async def upload_document(
 
     except Exception as e:
         # Wait, rollback isn't trivial in REST API without saga pattern, but we can set status to failed.
-        supabase_admin.table("jobs_resumes").update({"status": "failed"}).eq("doc_id", doc_id).execute()
+        await run_in_threadpool(
+            lambda: supabase_admin.table("jobs_resumes").update({"status": "failed"}).eq("doc_id", doc_id).execute()
+        )
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
