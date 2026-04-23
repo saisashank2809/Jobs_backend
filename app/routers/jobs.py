@@ -42,6 +42,11 @@ async def create_job(
         title=body.title,
         description=body.description_raw,
         skills=body.skills_required,
+        company_name=body.company_name,
+        external_apply_url=body.external_apply_url,
+        work_mode=body.work_mode,
+        location=body.location,
+        experience=body.experience,
     )
 
     # Kick off enrichment as a background task

@@ -16,7 +16,16 @@ class JobService:
         self._db = db
 
     async def create_job(
-        self, provider_id: str, title: str, description: str, skills: list[str]
+        self, 
+        provider_id: str, 
+        title: str, 
+        description: str, 
+        skills: list[str],
+        company_name: str | None = None,
+        external_apply_url: str | None = None,
+        work_mode: str | None = "Onsite",
+        location: str | None = None,
+        experience: str | None = None
     ) -> dict[str, Any]:
         """Insert a new job record and return the created row."""
         data = {
@@ -24,6 +33,11 @@ class JobService:
             "title": title,
             "description_raw": description,
             "skills_required": skills,
+            "company_name": company_name,
+            "external_apply_url": external_apply_url,
+            "work_mode": work_mode,
+            "location": location,
+            "experience": experience,
         }
         return await self._db.create_job(data)
 

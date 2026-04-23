@@ -70,6 +70,11 @@ class JobCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=200)
     description_raw: str = Field(..., min_length=20)
     skills_required: list[str] = Field(default_factory=list)
+    company_name: str | None = Field(None, max_length=200)
+    external_apply_url: str | None = Field(None, max_length=500)
+    work_mode: str | None = Field("Onsite", pattern=r"^(Onsite|Remote|Hybrid)$")
+    location: str | None = Field(None, max_length=200)
+    experience: str | None = Field(None, max_length=100)
 
 
 class JobDetail(BaseModel):
@@ -91,6 +96,7 @@ class JobDetail(BaseModel):
     status: str = "active"
     company_name: str | None = None
     external_apply_url: str | None = None
+    work_mode: str | None = "Onsite"
     external_id: str | None = None
     created_at: datetime | None = None
 
@@ -111,6 +117,8 @@ class JobFeedItem(BaseModel):
     status: str = "active"
     company_name: str | None = None
     external_apply_url: str | None = None
+    work_mode: str | None = "Onsite"
+    experience_range: str | None = None
     created_at: datetime | None = None
 
 
