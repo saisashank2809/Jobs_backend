@@ -88,6 +88,7 @@ class JobDetail(BaseModel):
     key_skills: list[str] | None = None
     skills_required: list[str] | None = None
     qualification: str | None = None
+    experience: str | None = None
     experience_range: str | None = None
     location: str | None = None
     salary_range: str | None = None
@@ -111,6 +112,7 @@ class JobFeedItem(BaseModel):
     key_skills: list[str] | None = None
     skills_required: list[str] | None = None
     qualification: str | None = None
+    experience: str | None = None
     experience_range: str | None = None
     location: str | None = None
     salary_range: str | None = None
@@ -118,7 +120,6 @@ class JobFeedItem(BaseModel):
     company_name: str | None = None
     external_apply_url: str | None = None
     work_mode: str | None = "Onsite"
-    experience_range: str | None = None
     created_at: datetime | None = None
 
 

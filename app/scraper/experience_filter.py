@@ -30,6 +30,10 @@ SENIOR_KEYWORDS = {
     "architect",
     "partner",
     "chief",
+    "specialist",
+    "expert",
+    "experienced",
+    "executive",
 }
 
 
@@ -51,21 +55,12 @@ def is_entry_level(title: str, experience_text: str = "") -> bool:
     if any(kw in title_lower for kw in ENTRY_LEVEL_KEYWORDS):
         return True
 
-    # 3. Check experience text for 0-2 year range using regex
-    # Matches: "0-2 years", "0 - 1 year", "1 year", "fresher", "entry level"
-    # Does NOT match: "3-5 years", "5+ years"
-    
-    # "0-X years" where X is 0, 1, or 2
-    if re.search(r'\b0\s*[-–]\s*[0-2]\s*years?\b', experience_text, re.I):
-        return True
-    
-    # "1 year", "1-2 years"
-    if re.search(r'\b1\s*[-–]?\s*[1-2]?\s*years?\b', experience_text, re.I):
-        return True
-        
-    # "Fresher" or "Entry Level" explicitly mentioned
-    if re.search(r'\bfresher|entry.?level\b', experience_text, re.I):
-        return True
+    # 4. Reject if experience text mentions >2 years using regex
+    # Matches: "3-5 years", "5+ years", "6+ years", "three years", etc.
+    if re.search(r'\b[3-9]\s*\+?\s*years?\b', experience_text, re.I):
+        return False
+    if re.search(r'\b(three|four|five|six|seven|eight|nine|ten)\s*years?\b', experience_text, re.I):
+        return False
 
-    # Default to True to allow all jobs for now (User request: "display them")
+    # Default to True to allow jobs that don't explicitly require high experience
     return True

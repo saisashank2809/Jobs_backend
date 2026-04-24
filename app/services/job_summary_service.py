@@ -173,7 +173,7 @@ def build_role_overview(job: dict[str, Any], min_items: int = 6, max_items: int 
         push(f"{title} suits candidates who can learn quickly, stay organized, and work well with the team on regular business goals")
 
     if len(overview) < max_items:
-        push("Freshers can use this role to build hands-on experience, while experienced candidates can use it to deepen their domain knowledge and delivery impact")
+        push("This role provides an opportunity to build hands-on experience, while allowing candidates to deepen their domain knowledge and delivery impact")
 
     return overview[:max_items]
 
@@ -203,12 +203,12 @@ def build_short_description(job: dict[str, Any], max_sentences: int = 3) -> str:
 
 
 _EXPERIENCE_MAP = [
-    (re.compile(r"fresher|intern|entry.?level|0\s*[-–]\s*0|graduate|trainee", re.I), "Freshers"),
+    (re.compile(r"5\s*[-–]\s*\d|5\s*to\s*\d|5\s*\+|6\s*\+|7\s*\+|8\s*\+|9\s*\+|10\s*\+|senior|lead|principal|staff|manager|director|vp|head|architect", re.I), "5+ years"),
+    (re.compile(r"2\s*[-–]\s*5|2\s*to\s*5|3\s*[-–]\s*5|3\s*to\s*5|4\s*[-–]\s*5|3\s*\+|4\s*\+|three|four|five", re.I), "3-5 years"),
+    (re.compile(r"1\s*[-–]\s*3|1\s*to\s*3|2\s*[-–]\s*3|2\s*to\s*3|2\s*\+|two|three", re.I), "1-3 years"),
+    (re.compile(r"0\s*[-–]\s*2|0\s*to\s*2|1\s*[-–]\s*2|1\s*to\s*2|1\s*\+|one|two", re.I), "0-2 years"),
     (re.compile(r"0\s*[-–]\s*1|0\s*to\s*1|less\s*than\s*1", re.I), "0-1 years"),
-    (re.compile(r"0\s*[-–]\s*2|0\s*to\s*2|1\s*[-–]\s*2|1\s*to\s*2|1\s*\+", re.I), "0-2 years"),
-    (re.compile(r"1\s*[-–]\s*3|1\s*to\s*3|2\s*[-–]\s*3|2\s*to\s*3|2\s*\+", re.I), "1-3 years"),
-    (re.compile(r"2\s*[-–]\s*5|2\s*to\s*5|3\s*[-–]\s*5|3\s*to\s*5|4\s*[-–]\s*5|3\s*\+|4\s*\+", re.I), "3-5 years"),
-    (re.compile(r"5\s*[-–]\s*\d|5\s*to\s*\d|5\s*\+|senior|lead|principal|staff|manager", re.I), "5+ years"),
+    (re.compile(r"fresher|intern|entry.?level|0\s*[-–]\s*0|graduate|trainee", re.I), "Freshers"),
 ]
 
 
@@ -229,29 +229,12 @@ def normalize_experience_range(job: dict[str, Any]) -> str:
             if pattern.search(source):
                 return label
 
-    # Numeric fallback: "3" → "3-5 years"
-    num_match = re.search(r"(\d+)", exp_raw)
+    # Numeric fallback: "3" → "1-3 years"
+    # Limit to reasonable years to avoid catching calendar years (2024, etc)
+    num_match = re.search(r"\b(\d+)\b", exp_raw)
     if num_match:
         years = int(num_match.group(1))
-        if years == 0:
-            return "Freshers"
-        if years <= 1:
-            return "0-1 years"
-        if years <= 2:
-            return "0-2 years"
-        if years <= 3:
-            return "1-3 years"
-        if years <= 5:
-            return "3-5 years"
-        return "5+ years"
-
-    # Text-mining fallback from overview/description
-    if not exp_raw:
-        haystack = " ".join(job.get("role_overview") or []) + " " + job.get("description_raw", "")
-        # First check explicit "X years of experience" statements
-        num_match = re.search(r"(\d+)\+?\s*years?(?:\s+of)?\s+experience", haystack, re.I)
-        if num_match:
-            years = int(num_match.group(1))
+        if 0 <= years <= 30:
             if years == 0:
                 return "Freshers"
             if years <= 1:
@@ -263,6 +246,26 @@ def normalize_experience_range(job: dict[str, Any]) -> str:
             if years <= 5:
                 return "3-5 years"
             return "5+ years"
+
+    # Text-mining fallback from overview/description
+    if not exp_raw:
+        haystack = " ".join(job.get("role_overview") or []) + " " + job.get("description_raw", "")
+        # First check explicit "X years of experience" statements
+        num_match = re.search(r"\b(\d+)\+?\s*years?(?:\s+of)?\s+experience", haystack, re.I)
+        if num_match:
+            years = int(num_match.group(1))
+            if 0 <= years <= 30:
+                if years == 0:
+                    return "Freshers"
+                if years <= 1:
+                    return "0-1 years"
+                if years <= 2:
+                    return "0-2 years"
+                if years <= 3:
+                    return "1-3 years"
+                if years <= 5:
+                    return "3-5 years"
+                return "5+ years"
             
         # Then fallback to general map patterns
         for pattern, label in _EXPERIENCE_MAP:
