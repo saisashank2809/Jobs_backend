@@ -376,3 +376,47 @@ class SupabaseAdapter(DatabasePort):
         result = await run_in_threadpool(_get)
         return result.data or []
 
+    # ── Feedback ──────────────────────────────────────────────
+
+    async def create_feedback(self, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
+        data["user_id"] = user_id
+        def _create():
+            return self._client.table("feedbacks_jobs").insert(data).execute()
+        result = await run_in_threadpool(_create)
+        return result.data[0]
+
+    async def get_user_feedback(self, user_id: str) -> list[dict[str, Any]]:
+        def _get():
+            return (
+                self._client.table("feedbacks_jobs")
+                .select("*")
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .execute()
+            )
+        result = await run_in_threadpool(_get)
+        return result.data or []
+
+    async def get_all_feedback(
+        self, 
+        limit: int = 100, 
+        offset: int = 0,
+        type: str | None = None,
+        rating: int | None = None
+    ) -> list[dict[str, Any]]:
+        def _get():
+            query = (
+                self._client.table("feedbacks_jobs")
+                .select("*, users_jobs(full_name, email)")
+                .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
+            )
+            if type:
+                query = query.eq("type", type)
+            if rating:
+                query = query.eq("rating", rating)
+            return query.execute()
+        
+        result = await run_in_threadpool(_get)
+        return result.data or []
+

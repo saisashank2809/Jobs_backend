@@ -6,8 +6,9 @@ from app.ports.job_port import JobPort
 from app.ports.blog_port import BlogPort
 from app.ports.chat_port import ChatPort
 from app.ports.mock_interview_port import MockInterviewPort
+from app.ports.feedback_port import FeedbackPort
 
-class DatabasePort(UserPort, JobPort, BlogPort, ChatPort, MockInterviewPort, ABC):
+class DatabasePort(UserPort, JobPort, BlogPort, ChatPort, MockInterviewPort, FeedbackPort, ABC):
     """
     Aggregate port for CRUD operations against the data store.
     Inherits from domain-specific ports to strictly follow ISP.

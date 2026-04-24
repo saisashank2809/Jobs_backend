@@ -362,6 +362,36 @@ class MockInterviewAdminDetail(BaseModel):
     company_name: str | None = None
 
 
+# ── Feedback ──────────────────────────────────────────────────
+
+
+class FeedbackCreate(BaseModel):
+    """Request body for submitting feedback."""
+
+    type: str = Field(..., pattern=r"^(job_platform|mock_interview)$")
+    rating: int = Field(..., ge=1, le=5)
+    feedback_text: str = Field(..., min_length=3)
+    interview_id: UUID | None = None
+    job_id: UUID | None = None
+    meta: dict | None = Field(default_factory=dict)
+
+
+class FeedbackResponse(BaseModel):
+    """Full feedback record response."""
+
+    id: UUID
+    user_id: UUID
+    user_full_name: str | None = None
+    user_email: str | None = None
+    type: str
+    rating: int
+    feedback_text: str
+    interview_id: UUID | None = None
+    job_id: UUID | None = None
+    meta: dict | None = None
+    created_at: datetime
+
+
 # ── Documents ─────────────────────────────────────────────────
 
 
