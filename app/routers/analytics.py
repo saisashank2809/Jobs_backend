@@ -3,7 +3,6 @@ from typing import Any
 
 from app.dependencies import get_analytics_service
 from app.services.analytics_service import AnalyticsService
-from app.routers.auth import router as auth_router  # if needed, or remove
 from app.services.auth_service import get_current_user
 
 router = APIRouter(

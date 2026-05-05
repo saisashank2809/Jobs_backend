@@ -13,6 +13,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # ── Supabase ──────────────────────────────────────────────
@@ -23,6 +24,10 @@ class Settings(BaseSettings):
 
     # ── OpenAI ────────────────────────────────────────────────
     openai_api_key: str
+
+    # ── Google OAuth ──────────────────────────────────────────
+    gotrue_external_google_client_id: str | None = None
+    gotrue_external_google_secret: str | None = None
 
     # ── App ───────────────────────────────────────────────────
     app_name: str = "jobs.ottobon.cloud"
