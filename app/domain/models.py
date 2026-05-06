@@ -413,3 +413,16 @@ class DocumentUploadResponse(BaseModel):
     doc_id: UUID
     message: str = "Document uploaded successfully and is being processed."
     status: DocumentStatus
+
+
+# ── Interview Materials ───────────────────────────────────────
+
+
+class InterviewMaterialResponse(BaseModel):
+    """Response model for an interview material."""
+
+    id: UUID
+    company_name: str
+    title: str
+    file_url: str
+    created_at: datetime | None = None

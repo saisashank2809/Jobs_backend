@@ -420,3 +420,32 @@ class SupabaseAdapter(DatabasePort):
         result = await run_in_threadpool(_get)
         return result.data or []
 
+
+    # ── Interview Materials ───────────────────────────────────
+
+    async def create_interview_material(self, data: dict[str, Any]) -> dict[str, Any]:
+        def _create():
+            return self._client.table("interview_materials").insert(data).execute()
+        result = await run_in_threadpool(_create)
+        return result.data[0]
+
+    async def list_interview_materials(self, company_name: str | None = None) -> list[dict[str, Any]]:
+        def _list():
+            query = self._client.table("interview_materials").select("*").order("created_at", desc=True)
+            if company_name:
+                query = query.eq("company_name", company_name)
+            return query.execute()
+        result = await run_in_threadpool(_list)
+        return result.data or []
+
+    async def delete_interview_material(self, material_id: str) -> dict[str, Any] | None:
+        def _delete():
+            return (
+                self._client.table("interview_materials")
+                .delete()
+                .eq("id", material_id)
+                .execute()
+            )
+        result = await run_in_threadpool(_delete)
+        # return the deleted row
+        return result.data[0] if result.data else None

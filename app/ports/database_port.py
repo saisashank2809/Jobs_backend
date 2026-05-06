@@ -32,3 +32,20 @@ class DatabasePort(UserPort, JobPort, BlogPort, ChatPort, MockInterviewPort, Fee
     async def get_learning_resources(self, skills: list[str]) -> list[dict[str, Any]]:
         """Fetch learning resources for a list of skills."""
         ...
+
+    # ── Interview Materials ──
+
+    @abstractmethod
+    async def create_interview_material(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Insert a new interview material record."""
+        ...
+
+    @abstractmethod
+    async def list_interview_materials(self, company_name: str | None = None) -> list[dict[str, Any]]:
+        """List interview materials, optionally filtered by company."""
+        ...
+
+    @abstractmethod
+    async def delete_interview_material(self, material_id: str) -> dict[str, Any] | None:
+        """Delete an interview material by ID, returning the deleted record if it existed."""
+        ...
