@@ -425,4 +425,107 @@ class InterviewMaterialResponse(BaseModel):
     company_name: str
     title: str
     file_url: str
+    folder_id: UUID | None = None
     created_at: datetime | None = None
+
+class MaterialFolderResponse(BaseModel):
+    """Response model for an interview material folder."""
+
+    id: UUID
+    name: str
+    created_at: datetime | None = None
+
+# ── Playbooks (New Grad) ──────────────────────────────────────
+
+
+class Playbook(BaseModel):
+    """Full playbook record response."""
+
+    id: UUID
+    slug: str
+    name: str
+    industry: str | None = None
+    logo: str | None = None
+    hq: str | None = None
+    locations: list[str] | None = Field(default_factory=list)
+    category: str | None = None
+    hiring_seasons: str | None = None
+    hiring_type: str | None = None
+    hiring_zone: str | None = "off-campus"
+    cover_image: str | None = None
+    roles: list[str] | None = Field(default_factory=list)
+    difficulty: str | None = "Medium"
+    difficulty_level: int | None = 3
+    rounds_count: int | None = 3
+    eligibility: dict | None = Field(default_factory=dict)
+    selection_process: list[dict] | None = Field(default_factory=list)
+    test_pattern: list[dict] | None = Field(default_factory=list)
+    syllabus: list[dict] | None = Field(default_factory=list)
+    registration_process: list[str] | None = Field(default_factory=list)
+    compensation: dict | None = Field(default_factory=dict)
+    prep_focus: str | None = None
+    insider_scoop: str | None = None
+    jobs_link: str | None = None
+    exam_date: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class PlaybookCreate(BaseModel):
+    """Request body for creating a playbook."""
+
+    slug: str
+    name: str
+    industry: str | None = None
+    logo: str | None = None
+    hq: str | None = None
+    locations: list[str] | None = None
+    category: str | None = None
+    hiring_seasons: str | None = None
+    hiring_type: str | None = None
+    hiring_zone: str | None = "off-campus"
+    cover_image: str | None = None
+    roles: list[str] | None = None
+    difficulty: str | None = "Medium"
+    difficulty_level: int | None = 3
+    rounds_count: int | None = 3
+    eligibility: dict | None = None
+    selection_process: list[dict] | None = None
+    test_pattern: list[dict] | None = None
+    syllabus: list[dict] | None = None
+    registration_process: list[str] | None = None
+    compensation: dict | None = None
+    prep_focus: str | None = None
+    insider_scoop: str | None = None
+    jobs_link: str | None = None
+    exam_date: str | None = None
+
+
+class PlaybookUpdate(BaseModel):
+    """Request body for updating a playbook."""
+
+    slug: str | None = None
+    name: str | None = None
+    industry: str | None = None
+    logo: str | None = None
+    hq: str | None = None
+    locations: list[str] | None = None
+    category: str | None = None
+    hiring_seasons: str | None = None
+    hiring_type: str | None = None
+    hiring_zone: str | None = None
+    cover_image: str | None = None
+    roles: list[str] | None = None
+    difficulty: str | None = None
+    difficulty_level: int | None = None
+    rounds_count: int | None = None
+    eligibility: dict | None = None
+    selection_process: list[dict] | None = None
+    test_pattern: list[dict] | None = None
+    syllabus: list[dict] | None = None
+    registration_process: list[str] | None = None
+    compensation: dict | None = None
+    prep_focus: str | None = None
+    insider_scoop: str | None = None
+    jobs_link: str | None = None
+    exam_date: str | None = None

@@ -30,19 +30,18 @@ def _get_extension(filename: str | None) -> str:
     return ext
 
 
-@router.post("", response_model=InterviewMaterialResponse)
-async def upload_interview_material(
-    file: UploadFile = File(...),
-    company_name: str = Form(...),
-    title: str = Form(...),
+@router.post("", response_model=list[InterviewMaterialResponse])
+async def upload_interview_materials(
+    files: list[UploadFile] = File(...),
+    company_name: str | None = Form(None),
+    title: str | None = Form(None),
+    folder_id: str | None = Form(None),
     current_user: dict[str, Any] = Depends(get_current_user),
     db: DatabasePort = Depends(get_db),
     storage: StoragePort = Depends(get_storage),
 ):
     """
-    Admin-only endpoint to upload an interview material (PDF/Word).
-    We assume the frontend only shows the upload form to admins,
-    but here we also ensure `current_user['role'] == 'admin'` to be safe.
+    Admin-only endpoint to upload multiple interview materials (PDF/Word).
     """
     if current_user.get("role") != "admin":
         raise HTTPException(
@@ -50,69 +49,100 @@ async def upload_interview_material(
             detail="Only admins can upload interview materials",
         )
 
-    ext = _get_extension(file.filename)
-    file_bytes = await file.read()
-    if not file_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty file uploaded",
-        )
+    # Pre-calculate common data
+    final_company_name = company_name
+    if not final_company_name or not final_company_name.strip():
+        if folder_id:
+            folder = await db.get_material_folder(folder_id)
+            final_company_name = folder["name"] if folder else "General"
+        else:
+            final_company_name = "General"
 
-    # Generate a unique path in the public bucket
-    file_id = str(uuid.uuid4())
-    bucket_name = "public" # Or 'interview-materials'
-    # Use public bucket so the frontend can just render the URL directly
-    storage_path = f"interview-materials/{company_name.lower().replace(' ', '-')}/{file_id}{ext}"
-
-    try:
-        # We can use the existing storage adapter
-        await storage.upload_file(
-            bucket=bucket_name,
-            path=storage_path,
-            file_bytes=file_bytes,
-            content_type=file.content_type or "application/octet-stream",
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload file to storage: {str(e)}"
-        )
-
-    # Reconstruct public URL (Assuming standard supabase URL format)
     supabase_url = settings.supabase_url.rstrip("/")
-    # Format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-    public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/{storage_path}"
+    bucket_name = "public"
+    
+    results = []
 
-    data = {
-        "company_name": company_name,
-        "title": title,
-        "file_url": public_url,
-        "file_path": storage_path
-    }
+    for file in files:
+        ext = _get_extension(file.filename)
+        file_bytes = await file.read()
+        if not file_bytes:
+            continue # Skip empty files
 
-    try:
-        inserted = await db.create_interview_material(data)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save record to database: {str(e)}"
-        )
+        # Generate a unique path for each file
+        file_id = str(uuid.uuid4())
+        storage_path = f"interview-materials/{final_company_name.lower().replace(' ', '-')}/{file_id}{ext}"
 
-    return InterviewMaterialResponse(**inserted)
+        try:
+            await storage.upload_file(
+                bucket=bucket_name,
+                path=storage_path,
+                file_bytes=file_bytes,
+                content_type=file.content_type or "application/octet-stream",
+            )
+        except Exception as e:
+            # For bulk uploads, we might want to continue or fail. Let's fail for now to be safe.
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to upload file {file.filename} to storage: {str(e)}"
+            )
+
+        public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/{storage_path}"
+        
+        # If multiple files are uploaded, we usually use their filenames as titles 
+        # unless a specific title was provided (which would then apply to all, which is rare but possible)
+        file_title = title if title and title.strip() else file.filename
+
+        data = {
+            "company_name": final_company_name,
+            "title": file_title,
+            "file_url": public_url,
+            "file_path": storage_path,
+            "folder_id": folder_id if folder_id else None
+        }
+
+        try:
+            inserted = await db.create_interview_material(data)
+            results.append(InterviewMaterialResponse(**inserted))
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to save record for {file.filename} to database: {str(e)}"
+            )
+
+    return results
 
 
 @router.get("", response_model=list[InterviewMaterialResponse])
 async def list_interview_materials(
     company_name: str | None = None,
+    folder_id: str | None = None,
     current_user: dict[str, Any] = Depends(get_current_user),
     db: DatabasePort = Depends(get_db),
 ):
     """
-    List all interview materials, optionally filtered by company.
-    Requires authentication (any role).
+    List all interview materials, optionally filtered by company or folder.
     """
-    materials = await db.list_interview_materials(company_name=company_name)
+    # We need to update list_interview_materials in DB port to support folder_id
+    materials = await db.list_interview_materials(company_name=company_name, folder_id=folder_id)
     return [InterviewMaterialResponse(**m) for m in materials]
+
+@router.get("/{material_id}", response_model=InterviewMaterialResponse)
+async def get_interview_material(
+    material_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: DatabasePort = Depends(get_db),
+):
+    """
+    Get a specific interview material by ID.
+    """
+    material = await db.get_interview_material(material_id)
+    if not material:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Material not found",
+        )
+    return InterviewMaterialResponse(**material)
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_interview_material(
