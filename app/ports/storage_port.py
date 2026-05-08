@@ -42,3 +42,14 @@ class StoragePort(ABC):
             A signed download URL.
         """
         ...
+
+    @abstractmethod
+    async def delete_file(self, bucket: str, path: str) -> None:
+        """
+        Delete a file from storage.
+
+        Args:
+            bucket: Storage bucket name
+            path: File path within the bucket
+        """
+        ...

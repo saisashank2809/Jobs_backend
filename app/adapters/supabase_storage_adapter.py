@@ -43,3 +43,7 @@ class SupabaseStorageAdapter(StoragePort):
             expires_in=expires_in,
         )
         return result["signedURL"]
+
+    async def delete_file(self, bucket: str, path: str) -> None:
+        """Delete a file from Supabase Storage."""
+        self._client.storage.from_(bucket).remove([path])

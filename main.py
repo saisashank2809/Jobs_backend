@@ -3,6 +3,7 @@ jobs.ottobon.cloud — FastAPI Application Entry Point
 
 Registers all routers, applies middleware, and serves the API.
 """
+# Triggering reload
 
 import logging
 import contextlib
@@ -11,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import admin, chat, ingestion, jobs, matching, users, blog, analytics, rag, resume_builder, mock_interviews, feedback, custom_auth
+from app.routers import admin, chat, ingestion, jobs, matching, users, blog, analytics, rag, resume_builder, mock_interviews, feedback, custom_auth, interview_materials, material_folders, playbooks
 from app.mock_interview.router import router as mock_interview_router  # noqa: E402
 from app.job_matching import router as job_match_router
 
@@ -87,6 +88,9 @@ app.include_router(resume_builder.router)
 app.include_router(mock_interviews.router)
 app.include_router(mock_interview_router)
 app.include_router(feedback.router)
+app.include_router(interview_materials.router)
+app.include_router(material_folders.router)
+app.include_router(playbooks.router)
 
 
 

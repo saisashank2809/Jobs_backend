@@ -420,3 +420,160 @@ class SupabaseAdapter(DatabasePort):
         result = await run_in_threadpool(_get)
         return result.data or []
 
+
+    # ── Interview Materials ───────────────────────────────────
+
+    async def create_interview_material(self, data: dict[str, Any]) -> dict[str, Any]:
+        def _create():
+            return self._client.table("interview_materials").insert(data).execute()
+        result = await run_in_threadpool(_create)
+        return result.data[0]
+
+    async def list_interview_materials(self, company_name: str | None = None, folder_id: str | None = None) -> list[dict[str, Any]]:
+        def _list():
+            query = self._client.table("interview_materials").select("*").order("created_at", desc=True)
+            if company_name:
+                query = query.eq("company_name", company_name)
+            if folder_id:
+                query = query.eq("folder_id", folder_id)
+            return query.execute()
+        result = await run_in_threadpool(_list)
+        return result.data or []
+
+    async def delete_interview_material(self, material_id: str) -> dict[str, Any] | None:
+        def _delete():
+            return (
+                self._client.table("interview_materials")
+                .delete()
+                .eq("id", material_id)
+                .execute()
+            )
+        result = await run_in_threadpool(_delete)
+        # return the deleted row
+        return result.data[0] if result.data else None
+
+    async def get_interview_material(self, material_id: str) -> dict[str, Any] | None:
+        def _get():
+            return (
+                self._client.table("interview_materials")
+                .select("*")
+                .eq("id", material_id)
+                .maybe_single()
+                .execute()
+            )
+        result = await run_in_threadpool(_get)
+        return result.data if result else None
+
+    async def get_material_folder(self, folder_id: str) -> dict[str, Any] | None:
+        def _get():
+            return (
+                self._client.table("material_folders")
+                .select("*")
+                .eq("id", folder_id)
+                .maybe_single()
+                .execute()
+            )
+        result = await run_in_threadpool(_get)
+        return result.data if result else None
+
+    async def list_material_folders(self) -> list[dict[str, Any]]:
+        def _list():
+            return (
+                self._client.table("material_folders")
+                .select("*")
+                .order("name")
+                .execute()
+            )
+        result = await run_in_threadpool(_list)
+        return result.data or []
+
+    async def create_material_folder(self, data: dict[str, Any]) -> dict[str, Any]:
+        def _create():
+            return self._client.table("material_folders").insert(data).execute()
+        result = await run_in_threadpool(_create)
+        return result.data[0]
+
+    async def delete_material_folder(self, folder_id: str) -> bool:
+        def _delete():
+            return (
+                self._client.table("material_folders")
+                .delete()
+                .eq("id", folder_id)
+                .execute()
+            )
+        result = await run_in_threadpool(_delete)
+        return bool(result.data)
+
+    async def update_material_folder(self, folder_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        def _update():
+            return (
+                self._client.table("material_folders")
+                .update(data)
+                .eq("id", folder_id)
+                .execute()
+            )
+        result = await run_in_threadpool(_update)
+        return result.data[0] if result.data else None
+
+    # ── Playbooks ─────────────────────────────────────────────
+
+    async def create_playbook(self, data: dict[str, Any]) -> dict[str, Any]:
+        def _create():
+            return self._client.table("playbooks").insert(data).execute()
+        result = await run_in_threadpool(_create)
+        return result.data[0]
+
+    async def get_playbook(self, playbook_id: str) -> dict[str, Any] | None:
+        def _get():
+            return (
+                self._client.table("playbooks")
+                .select("*")
+                .eq("id", playbook_id)
+                .maybe_single()
+                .execute()
+            )
+        result = await run_in_threadpool(_get)
+        return result.data if result else None
+
+    async def get_playbook_by_slug(self, slug: str) -> dict[str, Any] | None:
+        def _get():
+            return (
+                self._client.table("playbooks")
+                .select("*")
+                .eq("slug", slug)
+                .maybe_single()
+                .execute()
+            )
+        result = await run_in_threadpool(_get)
+        return result.data if result else None
+
+    async def list_playbooks(self, hiring_zone: str | None = None) -> list[dict[str, Any]]:
+        def _list():
+            query = self._client.table("playbooks").select("*").order("name")
+            if hiring_zone:
+                query = query.eq("hiring_zone", hiring_zone)
+            return query.execute()
+        result = await run_in_threadpool(_list)
+        return result.data or []
+
+    async def update_playbook(self, playbook_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        def _update():
+            return (
+                self._client.table("playbooks")
+                .update(data)
+                .eq("id", playbook_id)
+                .execute()
+            )
+        result = await run_in_threadpool(_update)
+        return result.data[0] if result.data else None
+
+    async def delete_playbook(self, playbook_id: str) -> bool:
+        def _delete():
+            return (
+                self._client.table("playbooks")
+                .delete()
+                .eq("id", playbook_id)
+                .execute()
+            )
+        result = await run_in_threadpool(_delete)
+        return bool(result.data)
